@@ -100,9 +100,11 @@ public class  VirtuosoGraphManagerCl {
 		LOG.debug(output);
 		Pattern successPattern=Pattern.compile("Result triples:\\s+(\\d+)");
 		Matcher matcher = successPattern.matcher(output);
-		if(matcher.find()) 
+		if(matcher.find()) {
+			if(matcher.group(1).equals("0")) 
+				return CommandResult.error("Empty dataset. Output:\n"+output);				
 			return CommandResult.success(matcher.group(1)+ " triples");							 
-		else 
+		} else 
 			return CommandResult.error("Exit code: "+exitCode+" ; Output:\n"+output);				
 	}
 
