@@ -7,8 +7,8 @@ COPY --chmod=777 ./src/docker/start_virtuoso_and_updater.sh /start_virtuoso_and_
 VOLUME [/database /settings]
 EXPOSE 8090
 EXPOSE 1111
-#ENTRYPOINT ["/start_virtuoso_and_updater.sh"]
-ENTRYPOINT ["/virtuoso-entrypoint.sh"]
+ENTRYPOINT ["/start_virtuoso_and_updater.sh"]
+#ENTRYPOINT ["/virtuoso-entrypoint.sh"]
 
 
 
