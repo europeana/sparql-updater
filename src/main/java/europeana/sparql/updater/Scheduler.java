@@ -15,10 +15,11 @@ import europeana.sparql.updater.virtuoso.VirtuosoGraphManagerCl;
 public class Scheduler {
 
 //	@Scheduled(cron = "0 0 0 * * 0")
-	@Scheduled(fixedDelay = 10080, initialDelay = 1, timeUnit = TimeUnit.MINUTES)//every 7 days
+	@Scheduled(fixedDelay = 608000, initialDelay = 10, timeUnit = TimeUnit.SECONDS)//every 7 days
 	public void runUpdate() {
 		File isqlCommand=new File("/opt/virtuoso-opensource/bin/isql");
-		File ttlFolder=new File("/ingest/ttl-import");
+//		File ttlFolder=new File("/ingest/ttl-import");
+		File ttlFolder=new File("/usr/share/proj");
 		File sqlFolder=new File("/ingest/sql-scripts");
 	//	File ttlFolder=new File("C:\\Users\\nfrei\\Desktop\\testSPARQL\\ttl-import");
 	//	File sqlFolder=new File("C:\\Users\\nfrei\\Desktop\\testSPARQL\\sql-scripts");
