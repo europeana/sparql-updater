@@ -15,11 +15,11 @@ import europeana.sparql.updater.virtuoso.VirtuosoGraphManagerCl;
 public class Scheduler {
 
 //	@Scheduled(cron = "0 0 0 * * 0")
-	@Scheduled(fixedDelay = 7, timeUnit = TimeUnit.DAYS)
+	@Scheduled(fixedDelay = 10080, initialDelay = 1, timeUnit = TimeUnit.MINUTES)//every 7 days
 	public void runUpdate() {
-		File isqlCommand=new File("/data/virtuoso/bin/isql");
-		File ttlFolder=new File("/data/virtuoso/import-europeana/ttl-import");
-		File sqlFolder=new File("/data/virtuoso/import-europeana/sql-scripts");
+		File isqlCommand=new File("/opt/virtuoso-opensource/bin/isql");
+		File ttlFolder=new File("/ingest/ttl-import");
+		File sqlFolder=new File("/ingest/sql-scripts");
 	//	File ttlFolder=new File("C:\\Users\\nfrei\\Desktop\\testSPARQL\\ttl-import");
 	//	File sqlFolder=new File("C:\\Users\\nfrei\\Desktop\\testSPARQL\\sql-scripts");
 	
@@ -31,7 +31,7 @@ public class Scheduler {
 		EuropeanaDatasetFtpServer ftpServer=EuropeanaDatasetFtpServer.GENERAL_PUBLIC;
 		EuropeanaSparqlEndpoint sparqlEndpoint=EuropeanaSparqlEndpoint.TEST_RND2;
 		sparqlEndpoint.setDebug(true);
-		VirtuosoGraphManagerCl graphManager=new VirtuosoGraphManagerCl(isqlCommand, 1111, "dba", "dba", ttlFolder, sqlFolder);
+		VirtuosoGraphManagerCl graphManager=new VirtuosoGraphManagerCl(isqlCommand, 1111, "dba", "pa", ttlFolder, sqlFolder);
 		
 		Updater updater=new Updater(sparqlEndpoint, ftpServer, graphManager);
 		UpdateReport report = updater.runTestUpdate(
