@@ -3,7 +3,10 @@ LABEL Author="Europeana Foundation <development@europeana.eu>"
 
 COPY ./target/sparql-updater.jar /opt/sparql-updater/sparql-updater.jar
 COPY --chmod=777 ./src/docker/start_virtuoso_and_updater.sh /start_virtuoso_and_updater.sh
-COPY ./src/docker/virtuoso.ini /opt/sparql-updater/virtuoso.ini
+#COPY ./src/docker/virtuoso.ini /opt/sparql-updater/virtuoso.ini
+
+RUN mkdir -p /ingest
+RUN ln -s /usr/share/proj /ttl-import
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -16,7 +19,7 @@ ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64/
 RUN export JAVA_HOME
 
 
-VOLUME [/database /settings]
+VOLUME [/database /settings /ingest /ttl-import]
 EXPOSE 8090
 EXPOSE 1111
 ENTRYPOINT ["/start_virtuoso_and_updater.sh"]
