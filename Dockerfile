@@ -18,8 +18,7 @@ RUN apt-get update && \
 ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64/
 RUN export JAVA_HOME
 
-
-VOLUME [/database /settings /ingest /ttl-import]
+VOLUME ["/database" "/settings" "/ingest" "/ttl-import"]
 EXPOSE 8090
 EXPOSE 1111
 ENTRYPOINT ["/start_virtuoso_and_updater.sh"]
