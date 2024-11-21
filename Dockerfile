@@ -1,7 +1,7 @@
 FROM openlink/virtuoso-opensource-7:latest
 LABEL Author="Europeana Foundation <development@europeana.eu>"
 
-COPY ./src/docker/load-edm.sql /initdb.d
+COPY ./src/docker/load-edm.sql /initdb.d/load-edm.sql
 COPY ./src/docker/edm-v527-160401.owl /usr/share/proj/edm-v527-160401.owl
 COPY ./target/sparql-updater.jar /opt/sparql-updater/sparql-updater.jar
 COPY --chmod=777 ./src/docker/start_virtuoso_and_updater.sh /start_virtuoso_and_updater.sh
