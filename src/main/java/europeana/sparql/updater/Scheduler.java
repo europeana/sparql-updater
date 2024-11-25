@@ -2,6 +2,7 @@ package europeana.sparql.updater;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.StringUtils;
@@ -69,6 +70,10 @@ public class Scheduler {
 		publishUpdateReportToSlack(report.print(), slackWebhookApiAutomation);
 	}
 
+//	public static void main(String[] args) {
+//		publishUpdateReportToSlack("testing sparql updater - please ignore", "https://hooks.slack.com/services/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");
+//	}
+	
 	public static void main(String[] args) {
 		SpringApplication.run(Scheduler.class, args);
 	}
@@ -76,10 +81,11 @@ public class Scheduler {
 	/**
 	 * Method publishes the report over the configured slack channel.
 	 * 
-	 * @param message -
 	 */
 	private static void publishUpdateReportToSlack(String message, String slackWebhookApiAutomation) {
+		message=String.format("{\"text\": \"%s\"}", message.replaceAll("\n", "\\n"));
 		LOG.info("Sending Slack Message : " + message);
+		System.out.println("Sending Slack Message : " + message);
 		try {
 			HttpPost httpPost = new HttpPost(slackWebhookApiAutomation);
 			StringEntity entity = new StringEntity(message);
@@ -98,4 +104,5 @@ public class Scheduler {
 		}
 	}
 
+	
 }

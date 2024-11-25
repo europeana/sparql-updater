@@ -111,6 +111,11 @@ public class UpdateReport {
 		return sb.toString();
 	}
 
+	public String printSummary(String sparqlNode) {
+		return String.format("SPARQL node %s has been updated where %d datasets were updated and %d datasets were deleted", 
+				sparqlNode, updated.size()+created.size(), removed.size());
+	}
+	
 	public Instant getStartTime() {
 		return startTime;
 	}

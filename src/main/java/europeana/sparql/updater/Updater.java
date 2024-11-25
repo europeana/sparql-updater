@@ -27,6 +27,10 @@ import europeana.sparql.updater.Dataset.State;
 import europeana.sparql.updater.virtuoso.CommandResult;
 import europeana.sparql.updater.virtuoso.VirtuosoGraphManagerCl;
 
+/**
+ * The top class that executes the SPARQL endpoint update process
+ *
+ */
 public class Updater {
 
 	private static final Logger LOG = LogManager.getLogger(Updater.class);
