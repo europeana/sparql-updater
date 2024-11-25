@@ -1,0 +1,21 @@
+version: '3.7'
+services:
+  sparql-updater-virtuoso:
+    container_name: sparql-updater-virtuoso
+    image: europeana/sparql-updater-virtuoso:latest
+    environment:
+      DBA_PASSWORD: pa
+
+    ports:
+    - published: 8890
+      target: 8890
+    - published: 1111
+      target: 1111
+    stdin_open: true
+    tty: true
+    volumes:
+    - ./volumes/database:/database
+    - ./volumes/ingest:/ingest
+    - ./volumes/ttl-import:/ttl-import
+
+    
