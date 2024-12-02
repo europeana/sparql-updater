@@ -47,28 +47,21 @@ public class Updater {
 		this.sparqlGraphManager = sparqlGraphManager;
 	}
 
-	public UpdateReport runTestUpdate(List<String> datasetIds) {
-		Set<Dataset> datasets = new HashSet<Dataset>(datasetIds.size());
-		for (String dsId : datasetIds) {
-			datasets.add(new Dataset(dsId));
-		}
-		return runUpdate(datasets);
-	}
-
-	public UpdateReport runUpdate() {
-		return runUpdate(null);
-	}
-
-	private UpdateReport runUpdate(Set<Dataset> forDatasets) {
+	/**
+	 *
+	 * @param datasets list of datasets to retrieve and update, null for all available data sets
+	 * @return
+	 */
+	public UpdateReport runUpdate(List<Dataset> datasets) {
 		List<Dataset> datasetsInFtp = ftpServer.listDatasets();
 		List<Dataset> datasetsAll = null;
 
 		Map<Dataset, Dataset> datasetsInSparql = sparql.listDatasets();
 
-		// this is used while under developement
-		if (forDatasets != null && !forDatasets.isEmpty()) {
-			datasetsInFtp.removeIf(e -> (!forDatasets.contains(e)));
-			datasetsInSparql.entrySet().removeIf(e -> (!forDatasets.contains(e.getKey())));
+		// this is used while under development
+		if (datasets != null && !datasets.isEmpty()) {
+			datasetsInFtp.removeIf(e -> (!datasets.contains(e)));
+			datasetsInSparql.entrySet().removeIf(e -> (!datasets.contains(e.getKey())));
 		}
 
 		for (Dataset ds : datasetsInFtp) {

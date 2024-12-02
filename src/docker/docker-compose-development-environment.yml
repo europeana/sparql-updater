@@ -7,15 +7,15 @@ services:
       DBA_PASSWORD: pa
 
     ports:
-    - published: 8890
-      target: 8890
-    - published: 1111
-      target: 1111
+      - published: 8890
+        target: 8890
+      - published: 1111
+        target: 1111
     stdin_open: true
     tty: true
     volumes:
-    - ./volumes/database:/database
-    - ./volumes/ingest:/ingest
-    - ./volumes/ttl-import:/ttl-import
+      - ./volumes/database:/database
+      - ./volumes/ingest:/ingest
+      - ./volumes/ttl-import:/ttl-import
 
     

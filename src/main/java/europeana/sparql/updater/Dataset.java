@@ -91,4 +91,8 @@ public class Dataset {
 		this.state = state;
 	}
 
+	public String toString() {
+		return getId();
+	}
+
 }

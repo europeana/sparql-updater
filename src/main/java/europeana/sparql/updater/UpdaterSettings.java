@@ -7,6 +7,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Container class for all settings that we load from properties file and optionally override from a user.properties file
  */
@@ -17,8 +20,13 @@ public class UpdaterSettings {
 
     private static final Logger LOG = LogManager.getLogger(UpdaterSettings.class);
 
+    @Value("${update.onstartup}")
+    private Boolean doUpdateOnStartup;
+    @Value("${update.datasets}")
+    private String updateDatasets;
+    private List<Dataset> datasetsList;
     @Value("${update.cron}")
-    private String updaterCronSchedule;
+    private String updateCronSchedule;
 
     @Value("${isql.file}")
     private String isqlFile;
@@ -41,12 +49,37 @@ public class UpdaterSettings {
     @PostConstruct
     private void logImportantSettings() {
         LOG.info("Configuration:");
+        if (updateDatasets == null || updateDatasets.isBlank()) {
+            LOG.info("Data sets: ALL");
+        } else {
+            String[] datasetIds = updateDatasets.split(",");
+            this.datasetsList = new ArrayList<>(datasetIds.length);
+            for (String dsId : datasetIds) {
+                datasetsList.add(new Dataset(dsId));
+            }
+            LOG.info("Data sets: {}", datasetsList);
+        }
+        LOG.info("Update on startup = {}", doUpdateOnStartup);
+        if (slackWebhook == null || slackWebhook.isBlank()) {
+            LOG.info("No reporting to Slack configured");
+        } else {
+            LOG.info("Reporting to Slack enabled");
+        }
+
         LOG.info("  Virtuoso endpoint = {}", virtuosoEndpoint);
         LOG.info("  Virtuoso port = {}", virtuosoPort);
     }
 
-    public String getUpdaterCronSchedule() {
-        return updaterCronSchedule;
+    public Boolean doUpdateOnStartup() {
+        return doUpdateOnStartup;
+    }
+
+    public List<Dataset> getDatasetsList() {
+        return datasetsList;
+    }
+
+    public String getUpdateCronSchedule() {
+        return updateCronSchedule;
     }
 
     public String getIsqlFile() {

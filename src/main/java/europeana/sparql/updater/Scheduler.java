@@ -33,7 +33,7 @@ public class Scheduler {
 	private static final Logger LOG = LogManager.getLogger(Scheduler.class);
 
 	private UpdaterSettings settings;
-	private static ThreadPoolTaskScheduler scheduler;
+	private ThreadPoolTaskScheduler scheduler;
 
 	public Scheduler(UpdaterSettings settings) {
 		this.settings = settings;
@@ -41,7 +41,7 @@ public class Scheduler {
 
 	@PostConstruct
 	public void init() {
-		if (StringUtils.isEmpty(settings.getUpdaterCronSchedule())) {
+		if (StringUtils.isEmpty(settings.getUpdateCronSchedule())) {
 			LOG.warn("No cron settings specified for updating SPARQL data! Automatic update is off!");
 		}
 		else {
@@ -51,9 +51,13 @@ public class Scheduler {
 				scheduler.initialize();
 			}
 			TimeZone timezone = TimeZone.getTimeZone("Europe/Amsterdam");
-			LOG.info("SPARQL data update schedule is {}, timezone {}", settings.getUpdaterCronSchedule(), timezone.getID());
+			LOG.info("SPARQL data update schedule is {}, timezone {}", settings.getUpdateCronSchedule(), timezone.getID());
 
-			scheduler.schedule(new DoUpdate(settings), new CronTrigger(settings.getUpdaterCronSchedule(), timezone));
+			scheduler.schedule(new DoUpdate(settings), new CronTrigger(settings.getUpdateCronSchedule(), timezone));
+		}
+
+		if (settings.doUpdateOnStartup()) {
+			new DoUpdate(settings).run();
 		}
 	}
 
@@ -85,13 +89,7 @@ public class Scheduler {
 					ttlFolder,
 					sqlFolder);
 
-			// TODO for testing purposes we define only a few sets to update!
-			List<String> datasetsToUpdate = List.of("1", "10", "2058621");
-			////				"1", "10", "2058621"
-			//				"222", "90901", "9200357", "1021", "2058703", "97", "2059511", "394", "169", "842"
-			////				, "2063621"	, "2048377", "2021110", "9200517", "91650", "91699", "0943110", "2051909", "995", "09902", "1008", "2048620", "411", "9200509", "577", "1095", "753", "457", "2048401", "2024918", "2032015", "902", "05816", "724", "712", "2021723", "10621", "2063629", "2048375", "2048128", "08534", "232", "925", "9200171", "2022361", "9200503", "101", "9200121", "1051", "9200412", "641", "2021719", "916124", "2021632", "916110", "532", "2023008", "183", "0943103", "1001", "2022718", "2023804", "58", "759", "2021802", "154", "2021648", "2021662", "2026113", "130", "2064201", "50", "2058815", "30", "328", "9200435", "9200573", "1097", "10501", "91698", "308", "2059515", "9200475", "2059513", "0940418", "477", "9200215", "765", "387", "921"
-
-			UpdateReport report = new Updater(sparqlEndpoint, ftpServer, graphManager).runTestUpdate(datasetsToUpdate);
+			UpdateReport report = new Updater(sparqlEndpoint, ftpServer, graphManager).runUpdate(settings.getDatasetsList());
 
 			LOG.info("Finished update.");
 			if (settings.getSlackWebhook() == null || settings.getSlackWebhook().isBlank()) {
