@@ -48,6 +48,7 @@ public class UpdaterSettings {
 
     @PostConstruct
     private void logImportantSettings() {
+        LOG.error("TEST2");
         LOG.info("Configuration:");
         if (updateDatasets == null || updateDatasets.isBlank()) {
             LOG.info("Data sets: ALL");
@@ -70,12 +71,16 @@ public class UpdaterSettings {
         LOG.info("  Virtuoso port = {}", virtuosoPort);
     }
 
+    /**
+     *
+     * @return true if the updater should run an update directly after startup, otherwise false
+     */
     public Boolean doUpdateOnStartup() {
         return doUpdateOnStartup;
     }
 
     public List<Dataset> getDatasetsList() {
-        return datasetsList;
+        return datasetsList.stream().toList();
     }
 
     public String getUpdateCronSchedule() {

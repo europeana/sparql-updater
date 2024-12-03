@@ -72,7 +72,7 @@ public class Scheduler {
 			LOG.info("Starting update...");
 			File isqlCommand = new File(settings.getIsqlFile());
 			File ttlFolder = new File(settings.getTtlFolder());
-			File sqlFolder = new File(settings.getTtlFolder());
+			File sqlFolder = new File(settings.getSqlFolder());
 			if (!ttlFolder.exists()) {
 				ttlFolder.mkdir();
 			}

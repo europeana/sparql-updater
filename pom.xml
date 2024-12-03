@@ -22,10 +22,10 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
 
-        <jena.version>4.10.0</jena.version>
+        <jena.version>3.11.0</jena.version>
         <spring-boot.version>3.4.0</spring-boot.version>
-        <commons-io.version>2.18.0</commons-io.version>
-        <commons-net.version>3.11.1</commons-net.version>
+        <commons-io.version>2.5</commons-io.version>
+        <commons-net.version>3.8.0</commons-net.version>
         <log4j.version>2.24.2</log4j.version>
     </properties>
 
@@ -50,11 +50,18 @@
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
         <!-- Used by jena-arq and versions lower than 3.25.x have a vulnerability -->
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>3.25.5</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.google.protobuf</groupId>-->
+<!--            <artifactId>protobuf-java</artifactId>-->
+<!--            <version>3.25.5</version>-->
+<!--        </dependency>-->
+<!--        &lt;!&ndash; Google GSON seems to be required by version 4.10 of Jena-->
+<!--         https://mvnrepository.com/artifact/com.google.code.gson/gson &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>com.google.code.gson</groupId>-->
+<!--            <artifactId>gson</artifactId>-->
+<!--            <version>2.11.0</version>-->
+<!--        </dependency>-->
         <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-arq</artifactId>
@@ -119,8 +126,7 @@
                 <version>11.1.0</version>
                 <configuration>
                     <nvdApiKeyEnvironmentVariable>NVD_APIKEY</nvdApiKeyEnvironmentVariable>
-                    <!-- Required when running on Jenkins as the cisa.gov website is blocking Hetzner servers -->
-                    <knownExploitedUrl>https://artifactory.eanadev.org/artifactory/ext-release-local/gov/cisa/www/known_exploited_vulnerabilities.json</knownExploitedUrl>
+                    <!--                    <knownExploitedUrl>https://artifactory.eanadev.org/artifactory/ext-release-local/gov/cisa/www/known_exploited_vulnerabilities.json</knownExploitedUrl>-->
                     <failBuildOnCVSS>8</failBuildOnCVSS>
                     <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
                     <!--                    <suppressionFiles>-->

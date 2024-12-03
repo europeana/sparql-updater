@@ -25,5 +25,6 @@
         </Root>
 
         <Logger name="europeana.sparql.updater" level="DEBUG"/>
+        <Logger name="europeana.sparql.updater.Updater" level="TRACE"/>
     </Loggers>
 </Configuration>

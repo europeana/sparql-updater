@@ -16,8 +16,8 @@ Some things to be aware of:
  * For local testing purposes we have a hard-coded password, see the `docker-compose-development-environment.yml` file
  * After startup a folder named `/volumes` is created containing 3 folders
    * `/database` containing the virtuoso data files
-   * `/ingest` containing the sparql-updater's log file and generated sql files
-   * `/ttl-import` containing files downloaded from the ftp-server
+   * `/ingest` containing the sparql-updater's log file and a subfolder with generated sql files (only filled during processing)
+   * `/ttl-import` containing files downloaded from the ftp-server (only filled during processing)
  * You can check which datasets are loaded using this SPARQL query: `SELECT DISTINCT ?g WHERE { GRAPH ?g {?s a ?o} }`
  
 If you are making changes to the sparql-updater don't forget to 
