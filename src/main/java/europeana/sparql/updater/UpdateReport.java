@@ -14,6 +14,7 @@ import java.util.Map;
  */
 public class UpdateReport {
 
+    String nodeId;
     Instant startTime = Instant.now();
     Instant endTime;
     List<Dataset> updated = new ArrayList<>();
@@ -22,9 +23,15 @@ public class UpdateReport {
     List<Dataset> unchanged = new ArrayList<>();
     List<Dataset> removed = new ArrayList<>();
     Map<Dataset, String> failed = new HashMap<>();
+    Exception error;
 
-    public UpdateReport() {
-        // empty constructor, we set all fields using methods
+    public UpdateReport(String nodeId) {
+        this.nodeId = nodeId;
+    }
+
+    public UpdateReport(String nodeId, Exception error) {
+        this.nodeId = nodeId;
+        this.error = error;
     }
 
     public void wasUpdated(Dataset ds) {
@@ -117,9 +124,13 @@ public class UpdateReport {
         return sb.toString();
     }
 
-    public String printSummary(String sparqlNode) {
+    public String printSummary() {
+        if (error != null) {
+            return String.format("SPARL node %n update failed with error %n",
+                    nodeId,  (error.getMessage() == null ? error.toString() : error.getMessage()));
+        }
         return String.format("SPARQL node %s has been updated where %d datasets were updated and %d datasets were deleted",
-                sparqlNode, updated.size()+created.size(), removed.size());
+                nodeId, updated.size()+created.size(), removed.size());
     }
 
     public Instant getStartTime() {

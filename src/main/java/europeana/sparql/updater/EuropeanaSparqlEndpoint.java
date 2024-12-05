@@ -1,5 +1,10 @@
 package europeana.sparql.updater;
 
+import europeana.sparql.updater.Dataset.State;
+import europeana.sparql.updater.SparqlClient.Handler;
+import org.apache.jena.query.QuerySolution;
+import org.apache.jena.rdf.model.Resource;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,12 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.jena.query.QuerySolution;
-import org.apache.jena.rdf.model.Resource;
-
-import europeana.sparql.updater.Dataset.State;
-import europeana.sparql.updater.SparqlClient.Handler;
 
 /**
  * A SPARQL client for querying the Virtuoso SPARQL endpoint. Used for getting
@@ -34,6 +33,7 @@ public class EuropeanaSparqlEndpoint {
 		this.baseUrl = baseUrl;
 
 		sparqlClient = new SparqlClient(baseUrl);
+		//sparqlClient.setRetries(3);
 	}
 
 	public void setDebug(boolean debug) {

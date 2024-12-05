@@ -20,7 +20,7 @@ public class UpdaterSettings {
 
     private static final Logger LOG = LogManager.getLogger(UpdaterSettings.class);
 
-    @Value("${update.onstartup}")
+    @Value("${update.onstartup:false}")
     private Boolean doUpdateOnStartup;
     @Value("${update.datasets}")
     private String updateDatasets;
@@ -48,7 +48,6 @@ public class UpdaterSettings {
 
     @PostConstruct
     private void logImportantSettings() {
-        LOG.error("TEST2");
         LOG.info("Configuration:");
         if (updateDatasets == null || updateDatasets.isBlank()) {
             LOG.info("Data sets: ALL");
@@ -75,7 +74,7 @@ public class UpdaterSettings {
      *
      * @return true if the updater should run an update directly after startup, otherwise false
      */
-    public Boolean doUpdateOnStartup() {
+    public boolean doUpdateOnStartup() {
         return doUpdateOnStartup;
     }
 
