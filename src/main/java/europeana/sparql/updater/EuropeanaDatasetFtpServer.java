@@ -1,11 +1,7 @@
 package europeana.sparql.updater;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
+import europeana.sparql.updater.exception.DownloadException;
+import europeana.sparql.updater.exception.UpdaterException;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
@@ -13,132 +9,172 @@ import org.apache.commons.net.ftp.FTPReply;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * An FTP client for accessing the dump files of the datasets in the Europeana
- * FTP server
+ * An FTP client for accessing the datasets files on the Europeana FTP server
  */
 public class EuropeanaDatasetFtpServer {
 
-	private static final Logger LOG = LogManager.getLogger(EuropeanaDatasetFtpServer.class);
+    private static final Logger LOG = LogManager.getLogger(EuropeanaDatasetFtpServer.class);
 
-	public enum FileFormat {
-		XML, TTL
-	}
+    private static final int RETRIES = 3;
 
-	public static final EuropeanaDatasetFtpServer GENERAL_PUBLIC = new EuropeanaDatasetFtpServer(
-			"download.europeana.eu", 21, FileFormat.TTL);
+    private final String hostName;
+    private final int port;
+    private final String path;
+    private final String username;
+    private final String password;
+    protected FTPClient ftpClient;
+    private final boolean downloadChecksum;
 
-	FileFormat fileFormat = FileFormat.XML;
+    /**
+     * Initialize a new FTP server
+     * @param hostName the host name of the ftp server
+     * @param port the port of the ftp server
+     * @param path the path on the server where datasets are available
+     * @param username the username to login
+     * @param password the password to login
+     * @param downloadChecksum if true then the checksum file is downloaded as well
+     */
+    public EuropeanaDatasetFtpServer(String hostName, int port, String path, String username, String password,
+                                     Boolean downloadChecksum) {
+        super();
+        this.hostName = hostName;
+        this.port = port;
+        this.path = path;
+        this.username = username;
+        this.password = password;
+        this.downloadChecksum = downloadChecksum;
 
-	String server;
-	int port = 21;
-	String user = "anonymous";
-	String pass = "";
-	protected FTPClient ftpClient;
-	protected String pathname;
-	boolean downloadChecksum = false;
+        initConnection();
+        try {
+            LOG.debug("Changing work directory to path {}...", path);
+            ftpClient.changeWorkingDirectory(path);
+            logServerReply(ftpClient);
+        } catch (IOException io) {
+            LOG.error("Error changing working directoy to path {}", path, io);
+        }
+        try {
+            ftpClient.enterLocalPassiveMode();
+            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+        } catch (IOException io) {
+            LOG.error("Error setting file type to binary", io);
+        }
+    }
 
-	public EuropeanaDatasetFtpServer(String server, int port, FileFormat fileFormat) {
-		super();
-		this.server = server;
-		this.port = port;
-		this.fileFormat = fileFormat;
-		this.pathname = "/dataset/" + fileFormat;
-	}
+    protected static void logServerReply(FTPClient ftpClient) {
+        int replyCode = ftpClient.getReplyCode();
+        if (!FTPReply.isPositiveCompletion(replyCode)) {
+            LOG.error("Ftp server returned error code {}!", replyCode);
+        }
+        if (LOG.isDebugEnabled()) {
+            String[] replies = ftpClient.getReplyStrings();
+            if (replies != null && replies.length > 0) {
+                for (String aReply : replies) {
+                    LOG.debug("FTP server response = {}", aReply);
+                }
+            }
+        }
+    }
 
-	protected static void showServerReply(FTPClient ftpClient) {
-		String[] replies = ftpClient.getReplyStrings();
-		if (replies != null && replies.length > 0) {
-			for (String aReply : replies) {
-				LOG.info("SERVER: " + aReply);
-			}
-		}
-	}
+    /**
+     * Download the zip file of a particular dataset
+     * @param outputFile the location and file name to store the downloaded file
+     * @param datasetId the id of the dataset to download
+     * @throws UpdaterException when there is a problem downloading the file
+     */
+    public void download(File outputFile, String datasetId) throws UpdaterException {
+        try {
+            FTPFile[] listFiles = ftpClient.listFiles();
+            logServerReply(ftpClient);
+            for (FTPFile f : listFiles) {
+                if ((downloadChecksum || f.getName().endsWith(".zip")) && (f.getName().startsWith(datasetId + "."))) {
+                    downloadFile(outputFile, f);
+                    break;
+                }
+            }
+            LOG.info("Set {} downloaded as file {}", datasetId, outputFile);
+        } catch (IOException io) {
+            throw new DownloadException("Error listing files", io);
+        }
+    }
 
-	public void enableDownloadChecksumFiles() {
-		downloadChecksum = true;
-	}
+    /**
+     * List the datasets available on the ftp server
+     * @return a list of available data sets
+     */
+    public List<Dataset> listDatasets() {
+        LOG.info("Listing FTP server datasets...");
+        List<Dataset> datasetList = new ArrayList<>();
+        try {
+            initConnection();
+            ftpClient.changeWorkingDirectory(path);
+            logServerReply(ftpClient);
 
-	public void download(File outputFile, String datasetId) throws IOException {
-		initConnection();
-		ftpClient.changeWorkingDirectory(pathname);
-		showServerReply(ftpClient);
+            ftpClient.enterLocalPassiveMode();
+            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
 
-		ftpClient.enterLocalPassiveMode();
-		ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+            FTPFile[] listFiles = ftpClient.listFiles();
+            logServerReply(ftpClient);
 
-		FTPFile[] listFiles = ftpClient.listFiles();
-		showServerReply(ftpClient);
-		for (FTPFile f : listFiles) {
-			if (downloadChecksum || f.getName().endsWith(".zip")) {
-				if (f.getName().startsWith(datasetId + ".")) {
-					downloadFile(outputFile, f);
-					break;
-				}
-			}
-		}
-		LOG.info("download finished");
-	}
+            for (FTPFile f : listFiles) {
+                if (f.getName().endsWith(".zip")) {
+                    Dataset ds = new Dataset(f.getName().substring(0, f.getName().indexOf('.')));
+                    ds.setTimestampFtp(f.getTimestamp().toInstant());
+                    datasetList.add(ds);
+                    LOG.trace("  Found FTP server dataset {} with date {}", ds, ds.timestampFtp);
+                }
+            }
+        } catch (IOException ex) {
+            LOG.error("Error listing data sets", ex);
+            // we'll try to continue with what we have
+        }
+        return datasetList;
+    }
 
-	public List<Dataset> listDatasets() {
-		List<Dataset> datasetList = new ArrayList<Dataset>();
-		try {
-			initConnection();
-			ftpClient.changeWorkingDirectory(pathname);
-			showServerReply(ftpClient);
+    private void initConnection() {
+        LOG.info("Initialising connection to FTP server...");
+        ftpClient = new FTPClient();
+        try {
+            ftpClient.connect(hostName, port);
+            logServerReply(ftpClient);
+            int replyCode = ftpClient.getReplyCode();
+            if (!FTPReply.isPositiveCompletion(replyCode)) {
+                LOG.error("Error connecting to ftp server {}:{}, error code: {}", hostName, port, replyCode);
+                return;
+            }
+            boolean success = ftpClient.login(username, password);
+            logServerReply(ftpClient);
+            if (!success) {
+                LOG.error("Could not login to FTP server");
+            } else {
+                LOG.info("Logged in to FTP server");
+            }
+        } catch (IOException ex) {
+            LOG.error(ex.getMessage(), ex);
+        }
+    }
 
-			ftpClient.enterLocalPassiveMode();
-			ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
-
-			FTPFile[] listFiles = ftpClient.listFiles();
-			showServerReply(ftpClient);
-			for (FTPFile f : listFiles) {
-				if (f.getName().endsWith(".zip")) {
-					Dataset ds = new Dataset(f.getName().substring(0, f.getName().indexOf('.')));
-					ds.setTimestampFtp(f.getTimestamp().toInstant());
-					datasetList.add(ds);
-				}
-			}
-		} catch (IOException ex) {
-			LOG.error(ex.getMessage(), ex);
-		}
-		return datasetList;
-	}
-
-	protected void initConnection() {
-		ftpClient = new FTPClient();
-		try {
-			ftpClient.connect(server, port);
-			showServerReply(ftpClient);
-			int replyCode = ftpClient.getReplyCode();
-			if (!FTPReply.isPositiveCompletion(replyCode)) {
-				LOG.error("Operation failed. Server reply code: " + replyCode);
-				return;
-			}
-			boolean success = ftpClient.login(user, pass);
-			showServerReply(ftpClient);
-			if (!success) {
-				LOG.error("Could not login to the server");
-				return;
-			} else {
-				LOG.debug("LOGGED IN SERVER");
-			}
-
-		} catch (IOException ex) {
-			LOG.error(ex.getMessage(), ex);
-		}
-	}
-
-	protected void downloadFile(File outputFile, FTPFile f) throws IOException {
-		FileOutputStream fos = new FileOutputStream(outputFile);
-		int retry = 0;
-		while (!ftpClient.retrieveFile(pathname + "/" + f.getName(), fos) && retry < 3) {
-			System.out.println("Failed to download " + pathname + "/" + f.getName() + " - Retrying...");
-			retry++;
-			if (retry == 3)
-				throw new RuntimeException("Failed to download " + pathname + "/" + f.getName());
-		}
-		fos.close();
-	}
+    protected void downloadFile(File outputFile, FTPFile f) throws UpdaterException {
+        try {
+            FileOutputStream fos = new FileOutputStream(outputFile);
+            int retry = 0;
+            while (!ftpClient.retrieveFile(path + "/" + f.getName(), fos) && retry < RETRIES) {
+                LOG.warn("Failed to download file {}/{} - Retrying...", path, f.getName());
+                retry++;
+                if (retry == RETRIES) {
+                    throw new DownloadException("Failed to download " + path + "/" + f.getName());
+                }
+            }
+            fos.close();
+        } catch (IOException io) {
+            throw new DownloadException("Failed to download " + path + "/" + f.getName(), io);
+        }
+    }
 
 }

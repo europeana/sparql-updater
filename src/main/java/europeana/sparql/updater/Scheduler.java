@@ -73,9 +73,9 @@ public class Scheduler {
 
             // TODO in k8s get nodeId
             String nodeId = settings.getVirtuosoEndpoint();
-            EuropeanaDatasetFtpServer ftpServer = EuropeanaDatasetFtpServer.GENERAL_PUBLIC;
+            EuropeanaDatasetFtpServer ftpServer = new EuropeanaDatasetFtpServer(settings.getFtpHostName(), settings.getFtpPort(),
+                    settings.getFtpPath(), settings.getFtpUsername(), settings.getFtpPassword(), settings.getFtpChecksum());
             EuropeanaSparqlEndpoint sparqlEndpoint = new EuropeanaSparqlEndpoint(settings.getVirtuosoEndpoint());
-            sparqlEndpoint.setDebug(true); // TODO disable for production?
             VirtuosoGraphManagerCl graphManager = new VirtuosoGraphManagerCl(isqlCommand, settings.getVirtuosoPort(),
                     settings.getVirtuosoUser(),
                     settings.getVirtuosoPassword(),
@@ -91,6 +91,7 @@ public class Scheduler {
             }
 
             LOG.info("Finished update.");
+            LOG.info(report.printSummary());
             if (settings.getSlackWebhook() == null || settings.getSlackWebhook().isBlank()) {
                 LOG.info("No report sent");
             } else {

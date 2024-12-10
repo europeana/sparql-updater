@@ -25,6 +25,13 @@
         </Root>
 
         <Logger name="europeana.sparql.updater" level="DEBUG"/>
+
+        <Logger name="europeana.sparql.updater.EuropeanaDatasetFtpServer" level="DEBUG"/>
+        <Logger name="europeana.sparql.updater.EuropeanaSparqlEndpoint" level="TRACE"/>
         <Logger name="europeana.sparql.updater.Updater" level="TRACE"/>
+        <Logger name="europeana.sparql.updater.Dataset" level="TRACE"/>
+
+        <!-- Set to DEBUG to see commands sent to SPARQL -->
+        <Logger name="europeana.sparql.updater.SparqlClient" level="INFO"/>
     </Loggers>
 </Configuration>

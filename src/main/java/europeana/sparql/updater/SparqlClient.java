@@ -16,17 +16,21 @@ import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Resource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * General implementation of a client for querying SPARQL endpoints
- *
  */
 public class SparqlClient {
-    public static abstract class Handler {
+
+    public Logger LOG = LogManager.getLogger(SparqlClient.class);
+
+    public static abstract class QueryHandler {
         // return true to continue to next URI, false to abort
         public boolean handleSolution(QuerySolution solution) throws Exception {
             return true;
-        };
+        }
     }
 
     public static final Map<String, String> STANDARD_PREFIXES = Collections
@@ -59,6 +63,7 @@ public class SparqlClient {
         this.baseUrl = baseUrl;
         this.dataset = null;
         this.queryPrefix = queryPrefix == null ? "" : queryPrefix;
+        this.setDebug(LOG.isDebugEnabled() || LOG.isTraceEnabled());
     }
 
     public SparqlClient(String baseUrl, Map<String, String> queryPrefixes) {
@@ -70,6 +75,7 @@ public class SparqlClient {
             tmp += String.format("PREFIX %s: <%s>\n", ns.getValue(), ns.getKey());
         }
         queryPrefix = tmp;
+        this.setDebug(LOG.isDebugEnabled() || LOG.isTraceEnabled());
     }
 
     public SparqlClient(Dataset dataset) {
@@ -81,6 +87,7 @@ public class SparqlClient {
         this.dataset = dataset;
         this.baseUrl = null;
         this.queryPrefix = queryPrefix;
+        this.setDebug(LOG.isDebugEnabled() || LOG.isTraceEnabled());
     }
 
     public SparqlClient(Dataset dataset, Map<String, String> queryPrefixes) {
@@ -92,11 +99,12 @@ public class SparqlClient {
             tmp += String.format("PREFIX %s: <%s>\n", ns.getKey(), ns.getValue());
         }
         queryPrefix = tmp;
+        this.setDebug(LOG.isDebugEnabled() || LOG.isTraceEnabled());
     }
 
     public List<QuerySolution> query(String queryString) {
         final List<QuerySolution> solutions = new ArrayList<QuerySolution>();
-        query(queryString, new Handler() {
+        query(queryString, new QueryHandler() {
             @Override
             public boolean handleSolution(QuerySolution solution) throws Exception {
                 solutions.add(solution);
@@ -106,7 +114,7 @@ public class SparqlClient {
         return solutions;
     }
 
-    public int query(String queryString, Handler handler) {
+    public int query(String queryString, QueryHandler handler) {
         int wdCount = 0;
         String fullQuery = queryPrefix + queryString;
         if (debug)
@@ -205,7 +213,7 @@ public class SparqlClient {
 
     public void createAllStatementsAboutResource(String resourceUri, Model createInModel) {
         final Resource subjRes = createInModel.createResource(resourceUri);
-        query("SELECT ?p ?o WHERE {<" + resourceUri + "> ?p ?o}", new Handler() {
+        query("SELECT ?p ?o WHERE {<" + resourceUri + "> ?p ?o}", new QueryHandler() {
             @Override
             public boolean handleSolution(QuerySolution solution) throws Exception {
                 Resource pRes = solution.getResource("p");
@@ -225,7 +233,7 @@ public class SparqlClient {
 
     public void createAllStatementsReferingResource(String resourceUri, Model createInModel) {
         final Resource subjRes = createInModel.createResource(resourceUri);
-        query("SELECT ?s ?p WHERE {?s ?p <" + resourceUri + ">}", new Handler() {
+        query("SELECT ?s ?p WHERE {?s ?p <" + resourceUri + ">}", new QueryHandler() {
             @Override
             public boolean handleSolution(QuerySolution solution) throws Exception {
                 Resource pRes = solution.getResource("p");
@@ -247,7 +255,7 @@ public class SparqlClient {
         this.debug = debug;
     }
 
-    public int queryModel(String queryString, Model mdl, Handler handler) {
+    public int queryModel(String queryString, Model mdl, QueryHandler handler) {
         int wdCount = 0;
         String fullQuery = queryPrefix + queryString;
         if (debug)

@@ -1,5 +1,9 @@
 package europeana.sparql.updater;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.lang.NonNull;
+
 import java.time.Instant;
 
 /**
@@ -9,18 +13,26 @@ import java.time.Instant;
  */
 public class Dataset {
 
+    /**
+     * Dataset state indicating what the update should do with it
+     */
 	public enum State {
 		UP_TO_DATE, OUTDATED, CORRUPT, MISSING, TO_REMOVE
 	}
+
+	private static final Logger LOG = LogManager.getLogger(Dataset.class);
 
 	String id;
 	Instant timestampFtp;
 	Instant timestampSparql;
 	State state;
 
-	public Dataset(String id) {
+    /**
+     * Create a new data set
+     * @param id of the dataset
+     */
+	public Dataset(@NonNull String id) {
 		super();
-		assert (id != null);
 		this.id = id;
 	}
 
@@ -48,23 +60,31 @@ public class Dataset {
 		this.timestampSparql = timestampSparql;
 	}
 
-	@Override
-	public boolean equals(Object obj) {
-		if (!(obj instanceof Dataset))
-			return false;
-		Dataset ds = (Dataset) obj;
-		return id.equals(ds.getId());
-	}
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        Dataset dataset = (Dataset) obj;
+        return id.equals(dataset.id);
+    }
 
-	@Override
-	public int hashCode() {
-		return id.hashCode();
-	}
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
 
-	public void checkState(Dataset dsAtSparql) {
-		if (dsAtSparql == null)
+    /**
+     * Update the state of this dataset by comparing it to the same dataset known in sparql
+     * @param dsAtSparql same dataset found in SPARQL
+     */
+    public void updateState(Dataset dsAtSparql) {
+		if (dsAtSparql == null) {
 			state = State.MISSING;
-		else {
+		} else {
 			setTimestampSparql(dsAtSparql.getTimestampSparql());
 			if (timestampSparql == null || dsAtSparql.getState() == State.CORRUPT)
 				state = State.CORRUPT;
@@ -72,6 +92,7 @@ public class Dataset {
 				state = State.OUTDATED;
 			else
 				state = State.UP_TO_DATE;
+			LOG.trace("Dataset {}: timestamp = {}, state = {}", dsAtSparql.getId(), dsAtSparql.getTimestampSparql(), dsAtSparql.getState());
 		}
 	}
 
