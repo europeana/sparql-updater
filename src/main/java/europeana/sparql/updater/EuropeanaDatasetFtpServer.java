@@ -112,7 +112,6 @@ public class EuropeanaDatasetFtpServer {
         LOG.info("Listing FTP server datasets...");
         List<Dataset> datasetList = new ArrayList<>();
         try {
-            initConnection();
             ftpClient.changeWorkingDirectory(path);
             logServerReply(ftpClient);
 

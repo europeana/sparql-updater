@@ -1,16 +1,17 @@
 package europeana.sparql.updater;
 
+import europeana.sparql.updater.exception.UpdaterException;
+import europeana.sparql.updater.virtuoso.EuropeanaSparqlClient;
 import europeana.sparql.updater.virtuoso.VirtuosoGraphManagerCl;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.support.CronTrigger;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.util.TimeZone;
@@ -18,21 +19,26 @@ import java.util.TimeZone;
 /**
  * Spring boot application that runs the Updater as a cron job
  */
-@SpringBootApplication
+
 @EnableScheduling
-public class Scheduler {
+@Service
+public class UpdateScheduler {
 
-    private static final Logger LOG = LogManager.getLogger(Scheduler.class);
+    private static final Logger LOG = LogManager.getLogger(UpdateScheduler.class);
 
-    private UpdaterSettings settings;
+    private final UpdaterSettings settings;
     private ThreadPoolTaskScheduler taskScheduler;
 
-    public Scheduler(UpdaterSettings settings) {
+    /**
+     * Initialize a new Update scheduler
+     * @param settings configuration
+     */
+    public UpdateScheduler(UpdaterSettings settings) {
         this.settings = settings;
     }
 
     @PostConstruct
-    public void init() {
+    private void init() {
         if (StringUtils.isEmpty(settings.getUpdateCronSchedule())) {
             LOG.warn("No cron settings specified for updating SPARQL data! Automatic update is off!");
         } else {
@@ -53,7 +59,7 @@ public class Scheduler {
     }
 
     private static class DoUpdate implements Runnable{
-        private UpdaterSettings settings;
+        private final UpdaterSettings settings;
 
         public DoUpdate(UpdaterSettings settings) {
             this.settings = settings;
@@ -71,27 +77,29 @@ public class Scheduler {
                 sqlFolder.mkdir();
             }
 
-            // TODO in k8s get nodeId
-            String nodeId = settings.getVirtuosoEndpoint();
-            EuropeanaDatasetFtpServer ftpServer = new EuropeanaDatasetFtpServer(settings.getFtpHostName(), settings.getFtpPort(),
-                    settings.getFtpPath(), settings.getFtpUsername(), settings.getFtpPassword(), settings.getFtpChecksum());
-            EuropeanaSparqlEndpoint sparqlEndpoint = new EuropeanaSparqlEndpoint(settings.getVirtuosoEndpoint());
             VirtuosoGraphManagerCl graphManager = new VirtuosoGraphManagerCl(isqlCommand, settings.getVirtuosoPort(),
                     settings.getVirtuosoUser(),
                     settings.getVirtuosoPassword(),
                     ttlFolder,
                     sqlFolder);
+            EuropeanaDatasetFtpServer ftpServer = new EuropeanaDatasetFtpServer(settings.getFtpHostName(), settings.getFtpPort(),
+                    settings.getFtpPath(), settings.getFtpUsername(), settings.getFtpPassword(), settings.getFtpChecksum());
+            EuropeanaSparqlClient sparqlEndpoint = new EuropeanaSparqlClient(settings.getVirtuosoEndpoint());
 
+            // TODO in k8s get nodeId
+            String nodeId = settings.getVirtuosoEndpoint();
             UpdateReport report;
             try {
-                report = new Updater(nodeId, sparqlEndpoint, ftpServer, graphManager).runUpdate(settings.getDatasetsList());
-            } catch (RuntimeException rte) {
-                LOG.error("Error running the update", rte);
-                report = new UpdateReport(nodeId, rte);
+                report = new UpdaterService(nodeId, sparqlEndpoint, ftpServer, graphManager).runUpdate(settings.getDatasetsList());
+            } catch (UpdaterException ue) {
+                LOG.error("Error running the update", ue);
+                report = new UpdateReport(nodeId, ue);
             }
 
             LOG.info("Finished update.");
-            LOG.info(report.printSummary());
+            if (LOG.isInfoEnabled()) {
+                LOG.info(report.printSummary());
+            }
             if (settings.getSlackWebhook() == null || settings.getSlackWebhook().isBlank()) {
                 LOG.info("No report sent");
             } else {
@@ -110,10 +118,6 @@ public class Scheduler {
             LOG.info("Shutting down update scheduler...");
             taskScheduler.shutdown();
         }
-    }
-
-    public static void main(String[] args) {
-        SpringApplication.run(Scheduler.class, args);
     }
 
 }

@@ -1,5 +1,6 @@
 package europeana.sparql.updater.virtuoso;
 
+import europeana.sparql.updater.exception.VirtuosoCmdLineException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.LogManager;
@@ -11,19 +12,21 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A client for the isql command line tool of Virtuoso, which is used to create,
- * update and remove the Europeana datasets in Virtuoso's database.
+ * A client for the isql command line tool of Virtuoso, which is used to create, update and remove the Europeana
+ * datasets in Virtuoso's database.
  */
 public class VirtuosoGraphManagerCl {
 
     private static final Logger LOG = LogManager.getLogger(VirtuosoGraphManagerCl.class);
 
     private static final int TIMEOUT_VIRTUOSO_CHECK = (int) TimeUnit.SECONDS.toMillis(5);
+    private static final int WAIT_BETWEEN_CHECKS = 4; // seconds
     private static final Pattern SUCCESS_TRIPLES = Pattern.compile("Result triples:\\s+(\\d+)");
 
     private final String dbaUser;
@@ -61,17 +64,18 @@ public class VirtuosoGraphManagerCl {
 
     /**
      * Waits a certain amount of time until we ping Virtuoso on the configured port.
-     * If that doesn't happen within the specified waiting time a RuntimException is thrown
+     * If that doesn't happen within the specified waiting time an exception is thrown
      * @param maxWaitTimeSec maximum amount of time before giving up
      * @return boolean
+     * @throws VirtuosoCmdLineException if Virtuose cannot be reached within the provided maximum time (plus timeout)
      */
-    public boolean waitUntilAvailable(int maxWaitTimeSec)  {
+    public boolean waitUntilAvailable(int maxWaitTimeSec) throws VirtuosoCmdLineException  {
         long start = System.currentTimeMillis();
         boolean available = false;
         while (!available && System.currentTimeMillis() - start < TimeUnit.SECONDS.toMillis(maxWaitTimeSec)) {
             available = isAvailable();
             try {
-                TimeUnit.SECONDS.sleep(4);
+                TimeUnit.SECONDS.sleep(WAIT_BETWEEN_CHECKS);
             } catch (InterruptedException e) {
                 LOG.warn("Interruption while checking if Virtuoso is ready", e);
                 Thread.currentThread().interrupt();
@@ -80,54 +84,76 @@ public class VirtuosoGraphManagerCl {
         if (available) {
             return true;
         }
-        throw new RuntimeException("Virtuoso not ready after waiting " + maxWaitTimeSec + " seconds");
+        throw new VirtuosoCmdLineException("Virtuoso not ready after waiting " + maxWaitTimeSec + " seconds");
     }
 
-
-
+    /**
+     * Deletes a graph from virtuoso from a dataset that is now obsolete
+     * @param datasetId the id of the dataset graph to delete
+     * @return CommandResult with the exit code and output of the operation
+     * @throws IOException if there's a problem while executing the command
+     */
     public CommandResult removeObsoleteGraph(String datasetId) throws IOException {
         return removeGraph(datasetId, IsqlTemplate.getRemoveObsoleteGraphScript(datasetId));
     }
 
+    /**
+     * Deletes a graph from virtuoso from a dataset with a temporary name
+     * @param datasetId the id of the dataset graph to delete
+     * @return CommandResult with the exit code and output of the operation
+     * @throws IOException if there's a problem while executing the command
+     */
     public CommandResult removeTmpGraph(String datasetId) throws IOException {
         return removeGraph(datasetId, IsqlTemplate.getRemoveTmpGraphScript(datasetId));
     }
 
     private CommandResult removeGraph(String datasetId, String sqlString) throws IOException {
-        LOG.debug("Removing graph for dataset {}", datasetId);
+        LOG.debug("Removing graph for dataset {}...", datasetId);
         File sqlFile = new File(sqlFolder, datasetId + "_remove.sql");
         FileUtils.write(sqlFile, sqlString, StandardCharsets.UTF_8);
 
         SqlCommandResult result = runSqlCommand(sqlFile);
-        if (result != null && result.exitCode == 0) {
+        if (result.exitCode == 0) {
             return CommandResult.success("Removal successful");
         } else {
             return CommandResult.error(result.exitCode, result.output);
         }
     }
 
+    /**
+     * Renames a graph that may or may not be present in Virtuoso for a particular dataset
+     * @param datasetId the id of the dataset graph to rename
+     * @return CommandResult with the exit code and output of the operation
+     * @throws IOException if there's a problem while executing the command
+     */
     public CommandResult renameTmpGraph(String datasetId) throws IOException {
-        LOG.debug("Renaming graph for dataset {}", datasetId);
+        LOG.debug("Renaming graph for dataset {}...", datasetId);
         String sqlString = IsqlTemplate.getRenameGraphScript(datasetId);
         File sqlFile = new File(sqlFolder, datasetId + "_rename.sql");
         FileUtils.write(sqlFile, sqlString, StandardCharsets.UTF_8);
 
         SqlCommandResult result = runSqlCommand(sqlFile);
-        if (result != null && result.exitCode == 0) {
+        if (result.exitCode == 0) {
             return CommandResult.success("Removal successful");
         } else {
             return CommandResult.error(result.exitCode, result.output);
         }
     }
 
+    /**
+     * Inserts a graph in Virtuoso for a particular dataset
+     * @param datasetId the id of the dataset graph to insert
+     * @return CommandResult with the exit code and output of the operation
+     * @throws IOException if there's a problem while executing the command
+     */
     public CommandResult ingestGraph(String datasetId) throws IOException {
-        LOG.debug("Ingesting graph for dataset {}", datasetId);
+        LOG.debug("Ingesting graph for dataset {}...", datasetId);
         String sqlString = IsqlTemplate.getCreateUpdateScript(ttlImportFolder, datasetId);
         File sqlFile = new File(sqlFolder, datasetId + "_create_update.sql");
         FileUtils.write(sqlFile, sqlString, StandardCharsets.UTF_8);
 
         SqlCommandResult result = runSqlCommand(sqlFile);
-        if (result != null && result.exitCode == 0) {
+        if (result.exitCode == 0) {
             Matcher matcher = SUCCESS_TRIPLES.matcher(result.output);
             if (matcher.find()) {
                 if (("0").equals(matcher.group(1))) {
@@ -136,7 +162,7 @@ public class VirtuosoGraphManagerCl {
                 return CommandResult.success(matcher.group(1) + " triples");
             }
         }
-        return CommandResult.error(result.exitCode, result.output);
+        return CommandResult.error(result.exitCode, "Triples not found:" + result.output);
     }
 
     private SqlCommandResult runSqlCommand(File sqlFile) throws IOException {
@@ -154,9 +180,9 @@ public class VirtuosoGraphManagerCl {
             Thread.currentThread().interrupt();
         } finally {
             LOG.debug("Deleting SQL file {}...", sqlFile);
-            sqlFile.delete();
+            Files.deleteIfExists(sqlFile.toPath());
         }
-        return null;
+        return new SqlCommandResult(null);
     }
 
     private static final class SqlCommandResult {
@@ -167,9 +193,13 @@ public class VirtuosoGraphManagerCl {
             if (process != null) {
                 this.exitCode = process.exitValue();
                 this.output = IOUtils.toString(process.getInputStream(), StandardCharsets.UTF_8);
-                LOG.debug("Process exit value = {}, output = {}", exitCode, output);
+                if (LOG.isTraceEnabled()) {
+                    LOG.trace("Process exit value = {}, output = {}", exitCode, output);
+                } else {
+                    LOG.debug("Process exit value = {}", exitCode);
+                }
             } else {
-                LOG.error("Process is null");
+                LOG.error("Process is null!");
             }
         }
     }

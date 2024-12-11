@@ -125,12 +125,26 @@ public class UpdateReport {
     }
 
     public String printSummary() {
-        if (error != null) {
-            return String.format("SPARL node %n update failed with error %n",
-                    nodeId,  (error.getMessage() == null ? error.toString() : error.getMessage()));
+        StringBuilder s = new StringBuilder();
+        s.append("Update of SPARQL node ").append(nodeId);
+
+        if (endTime == null) {
+            s.append(" was aborted.\n");
+        } else {
+            Duration diff = Duration.between(startTime, endTime);
+            s.append(" completed in ").append(diff.toHours()).append("h")
+                    .append(diff.toMinutesPart()).append("m")
+                    .append(diff.toSecondsPart()).append("s.\n");
         }
-        return String.format("SPARQL node %s has been updated where %d datasets were updated and %d datasets were deleted",
-                nodeId, updated.size()+created.size(), removed.size());
+
+        if (error != null) {
+            s.append("It failed with error \"")
+                    .append(error.getMessage() == null ? error.toString() : error.getMessage()).append("\".\n");
+        }
+        s.append(created.size()).append(" new datasets were added, ")
+                .append(updated.size()).append(" datasets were updated, and ")
+                .append(removed.size()).append(" were deleted.");
+        return s.toString();
     }
 
     public Instant getStartTime() {

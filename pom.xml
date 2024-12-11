@@ -107,7 +107,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>europeana.sparql.updater.Scheduler</mainClass>
+                    <mainClass>europeana.sparql.updater.UpdaterApplication</mainClass>
                 </configuration>
                 <executions>
                     <execution>

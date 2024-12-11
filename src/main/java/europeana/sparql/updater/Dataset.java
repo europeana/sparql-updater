@@ -16,49 +16,49 @@ public class Dataset {
     /**
      * Dataset state indicating what the update should do with it
      */
-	public enum State {
-		UP_TO_DATE, OUTDATED, CORRUPT, MISSING, TO_REMOVE
-	}
+    public enum State {
+        UP_TO_DATE, OUTDATED, CORRUPT, MISSING, TO_REMOVE
+    }
 
-	private static final Logger LOG = LogManager.getLogger(Dataset.class);
+    private static final Logger LOG = LogManager.getLogger(Dataset.class);
 
-	String id;
-	Instant timestampFtp;
-	Instant timestampSparql;
-	State state;
+    String id;
+    Instant timestampFtp;
+    Instant timestampSparql;
+    State state;
 
     /**
      * Create a new data set
      * @param id of the dataset
      */
-	public Dataset(@NonNull String id) {
-		super();
-		this.id = id;
-	}
+    public Dataset(@NonNull String id) {
+        super();
+        this.id = id;
+    }
 
-	public String getId() {
-		return id;
-	}
+    public String getId() {
+        return id;
+    }
 
-	public void setId(String id) {
-		this.id = id;
-	}
+    public void setId(String id) {
+        this.id = id;
+    }
 
-	public Instant getTimestampFtp() {
-		return timestampFtp;
-	}
+    public Instant getTimestampFtp() {
+        return timestampFtp;
+    }
 
-	public void setTimestampFtp(Instant instant) {
-		this.timestampFtp = instant;
-	}
+    public void setTimestampFtp(Instant instant) {
+        this.timestampFtp = instant;
+    }
 
-	public Instant getTimestampSparql() {
-		return timestampSparql;
-	}
+    public Instant getTimestampSparql() {
+        return timestampSparql;
+    }
 
-	public void setTimestampSparql(Instant timestampSparql) {
-		this.timestampSparql = timestampSparql;
-	}
+    public void setTimestampSparql(Instant timestampSparql) {
+        this.timestampSparql = timestampSparql;
+    }
 
     @Override
     public boolean equals(Object obj) {
@@ -82,38 +82,38 @@ public class Dataset {
      * @param dsAtSparql same dataset found in SPARQL
      */
     public void updateState(Dataset dsAtSparql) {
-		if (dsAtSparql == null) {
-			state = State.MISSING;
-		} else {
-			setTimestampSparql(dsAtSparql.getTimestampSparql());
-			if (timestampSparql == null || dsAtSparql.getState() == State.CORRUPT)
-				state = State.CORRUPT;
-			else if (timestampFtp.isAfter(timestampSparql))
-				state = State.OUTDATED;
-			else
-				state = State.UP_TO_DATE;
-			LOG.trace("Dataset {}: timestamp = {}, state = {}", dsAtSparql.getId(), dsAtSparql.getTimestampSparql(), dsAtSparql.getState());
-		}
-	}
+        if (dsAtSparql == null) {
+            state = State.MISSING;
+        } else {
+            setTimestampSparql(dsAtSparql.getTimestampSparql());
+            if (timestampSparql == null || dsAtSparql.getState() == State.CORRUPT)
+                state = State.CORRUPT;
+            else if (timestampFtp.isAfter(timestampSparql))
+                state = State.OUTDATED;
+            else
+                state = State.UP_TO_DATE;
+            LOG.trace("Dataset {}: timestamp = {}, state = {}", dsAtSparql.getId(), dsAtSparql.getTimestampSparql(), dsAtSparql.getState());
+        }
+    }
 
-	public boolean isCorruptAtSparql() {
-		return timestampSparql == null;
-	}
+    public boolean isCorruptAtSparql() {
+        return timestampSparql == null;
+    }
 
-	public boolean isOutdatedAtSparql() {
-		return false;
-	}
+    public boolean isOutdatedAtSparql() {
+        return false;
+    }
 
-	public State getState() {
-		return state;
-	}
+    public State getState() {
+        return state;
+    }
 
-	public void setState(State state) {
-		this.state = state;
-	}
+    public void setState(State state) {
+        this.state = state;
+    }
 
-	public String toString() {
-		return getId();
-	}
+    public String toString() {
+        return getId();
+    }
 
 }

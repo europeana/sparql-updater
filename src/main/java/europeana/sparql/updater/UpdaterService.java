@@ -2,7 +2,9 @@ package europeana.sparql.updater;
 
 import europeana.sparql.updater.Dataset.State;
 import europeana.sparql.updater.exception.UpdaterException;
+import europeana.sparql.updater.exception.VirtuosoCmdLineException;
 import europeana.sparql.updater.virtuoso.CommandResult;
+import europeana.sparql.updater.virtuoso.EuropeanaSparqlClient;
 import europeana.sparql.updater.virtuoso.VirtuosoGraphManagerCl;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -11,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -21,20 +24,27 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 /**
- * The top class that executes the SPARQL endpoint update process
- *
+ * Service that runs the SPARQL endpoint update process
  */
-public class Updater {
+public class UpdaterService {
 
-    private static final Logger LOG = LogManager.getLogger(Updater.class);
+    private static final Logger LOG = LogManager.getLogger(UpdaterService.class);
 
+    private static final int VIRTUOSO_MAX_WAIT_TIME = 60; // seconds
     String nodeId;
-    EuropeanaSparqlEndpoint sparql;
+    EuropeanaSparqlClient sparql;
     EuropeanaDatasetFtpServer ftpServer;
     VirtuosoGraphManagerCl sparqlGraphManager;
 
-    public Updater(String nodeId, EuropeanaSparqlEndpoint sparql, EuropeanaDatasetFtpServer ftpServer,
-                   VirtuosoGraphManagerCl sparqlGraphManager) {
+    /**
+     * Initialize
+     * @param nodeId
+     * @param sparql
+     * @param ftpServer
+     * @param sparqlGraphManager
+     */
+    public UpdaterService(String nodeId, EuropeanaSparqlClient sparql, EuropeanaDatasetFtpServer ftpServer,
+                          VirtuosoGraphManagerCl sparqlGraphManager) {
         super();
         this.nodeId = nodeId;
         this.sparql = sparql;
@@ -42,9 +52,9 @@ public class Updater {
         this.sparqlGraphManager = sparqlGraphManager;
     }
 
-    public UpdateReport runUpdate(List<Dataset> datasets) {
+    public UpdateReport runUpdate(List<Dataset> datasets) throws VirtuosoCmdLineException {
         // Check if Virtuoso is up and running first, will throw error if not available in time
-        sparqlGraphManager.waitUntilAvailable(60);
+        sparqlGraphManager.waitUntilAvailable(VIRTUOSO_MAX_WAIT_TIME);
 
         List<Dataset> datasetsInFtp = ftpServer.listDatasets();
         Map<Dataset, Dataset> datasetsInSparql = sparql.listDatasets();
@@ -74,54 +84,10 @@ public class Updater {
         UpdateReport report = new UpdateReport(nodeId);
         for (Dataset ds : datasetsToUpdate) {
             try {
-                CommandResult result = null;
-                switch (ds.getState()) {
-                    case CORRUPT -> {
-                        LOG.warn("Dataset {} is corrupt and will be removed", ds.getId());
-                        sparqlGraphManager.removeTmpGraph(ds.getId());
-                        result = createOrUpdateDataset(ds);
-                        if (result.isSuccess())
-                            report.wasFixed(ds);
-                        else
-                            report.failed(ds, result.getErrorMessage());
-                    }
-                    case MISSING -> {
-                        LOG.debug("Dataset {} is new and will be downloaded", ds.getId());
-                        result = createOrUpdateDataset(ds);
-                        if (result.isSuccess())
-                            report.wasCreated(ds);
-                        else
-                            report.failed(ds, result.getErrorMessage());
-                    }
-                    case OUTDATED -> {
-                        LOG.debug("Dataset {} is outdated and will be downloaded again", ds.getId());
-                        result = createOrUpdateDataset(ds);
-                        if (result.isSuccess())
-                            report.wasUpdated(ds);
-                        else
-                            report.failed(ds, result.getErrorMessage());
-                    }
-                    case UP_TO_DATE -> {
-                        report.wasUnchanged(ds);
-                        LOG.trace("No changes to dataset {} ", ds.getId());
-                    }
-                    case TO_REMOVE -> {
-                        LOG.debug("Dataset {} is no longer available and will be removed", ds.getId());
-                        result = sparqlGraphManager.removeTmpGraph(ds.getId());
-                        if (!result.isSuccess())
-                            report.failed(ds, result.getErrorMessage());
-                        else {
-                            result = sparqlGraphManager.removeObsoleteGraph(ds.getId());
-                            if (result.isSuccess())
-                                report.wasRemoved(ds);
-                            else
-                                report.failed(ds, result.getErrorMessage());
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                LOG.error(e.getMessage(), e);
-                report.failed(ds, StringUtils.isEmpty(e.getMessage()) ? "Exception " + e.getClass().getSimpleName()
+                updateSet(report, ds);
+            } catch (UpdaterException | IOException  e) {
+                LOG.error("Failed to update dataset {}", ds, e);
+                report.failed(ds, StringUtils.isEmpty(e.getMessage()) ? ("Exception " + e.getClass().getSimpleName())
                         : e.getMessage());
             }
         }
@@ -129,40 +95,98 @@ public class Updater {
         return report;
     }
 
+    private void updateSet(UpdateReport report, Dataset ds) throws UpdaterException, IOException {
+        CommandResult result = null;
+        switch (ds.getState()) {
+            case CORRUPT -> {
+                LOG.warn("Dataset {} is corrupt and will be removed", ds.getId());
+                sparqlGraphManager.removeTmpGraph(ds.getId());
+                result = createOrUpdateDataset(ds);
+                if (result.isSuccess()) {
+                    report.wasFixed(ds);
+                } else {
+                    report.failed(ds, result.getErrorMessage());
+                }
+            }
+            case MISSING -> {
+                LOG.debug("Dataset {} is new and will be downloaded", ds.getId());
+                result = createOrUpdateDataset(ds);
+                if (result.isSuccess()) {
+                    report.wasCreated(ds);
+                } else {
+                    report.failed(ds, result.getErrorMessage());
+                }
+            }
+            case OUTDATED -> {
+                LOG.debug("Dataset {} is outdated and will be downloaded again", ds.getId());
+                result = createOrUpdateDataset(ds);
+                if (result.isSuccess()) {
+                    report.wasUpdated(ds);
+                } else {
+                    report.failed(ds, result.getErrorMessage());
+                }
+            }
+            case UP_TO_DATE -> {
+                report.wasUnchanged(ds);
+                LOG.trace("No changes to dataset {} ", ds.getId());
+            }
+            case TO_REMOVE -> {
+                LOG.debug("Dataset {} is no longer available and will be removed", ds.getId());
+                result = sparqlGraphManager.removeTmpGraph(ds.getId());
+                if (!result.isSuccess()) {
+                    report.failed(ds, result.getErrorMessage());
+                } else {
+                    result = sparqlGraphManager.removeObsoleteGraph(ds.getId());
+                    if (result.isSuccess()) {
+                        report.wasRemoved(ds);
+                    } else {
+                        report.failed(ds, result.getErrorMessage());
+                    }
+                }
+            }
+        }
+    }
+
     private CommandResult createOrUpdateDataset(Dataset ds) throws UpdaterException, IOException {
+        Instant startTime = Instant.now();
+
         String datasetId = ds.getId();
         File outputFolder = sparqlGraphManager.getTtlImportFolder();
         File dsZipFile = new File(outputFolder, ds.getId() + ".zip");
         LOG.trace("Downloading zip file {}...", dsZipFile);
         ftpServer.download(dsZipFile, datasetId);
 
-        prepareVirtuosoImportFiles(datasetId, dsZipFile, ds.getTimestampFtp());
+        File dsTtlFile = prepareVirtuosoImportFiles(datasetId, dsZipFile, ds.getTimestampFtp());
         LOG.trace("Deleting zip file {}...", dsZipFile);
-        dsZipFile.delete();
+        Files.delete(dsZipFile.toPath());
 
-        Instant startTime = Instant.now();
         CommandResult res = sparqlGraphManager.ingestGraph(datasetId + "_new");
         if (res.isSuccess()) {
             res = sparqlGraphManager.removeObsoleteGraph(datasetId);
             if (res.isSuccess()) {
                 res = sparqlGraphManager.renameTmpGraph(datasetId);
-                Instant endTime = Instant.now();
-                Duration diff = Duration.between(startTime, endTime);
-                if (LOG.isInfoEnabled()) {
-                    LOG.info(String.format("Dataset \"%s\" ingest duration: %d:%02d:%02d", datasetId, diff.toHours(),
-                            diff.toMinutesPart(), diff.toSecondsPart()));
-                }
             }
+        }
+        LOG.trace("Deleting ttl.gz file {}", dsTtlFile);
+        Files.delete(dsTtlFile.toPath());
+
+        if (LOG.isInfoEnabled()) {
+            Instant endTime = Instant.now();
+            Duration diff = Duration.between(startTime, endTime);
+            LOG.info(String.format("Ingesting dataset \"%s\" took: %d:%02d:%02d", datasetId, diff.toHours(),
+                    diff.toMinutesPart(), diff.toSecondsPart()));
         }
         return res;
     }
 
-    private void prepareVirtuosoImportFiles(String datasetId, File dsZipFile, Instant datasetTimestampAtFtp) throws IOException {
+    private File prepareVirtuosoImportFiles(String datasetId, File dsZipFile, Instant datasetTimestampAtFtp) throws IOException {
         File outputFolder = dsZipFile.getParentFile();
 //		FileUtils.write(new File(outputFolder, datasetId+".ttl.graph"), "http://data.europeana.eu/dataset/"+datasetId, StandardCharsets.UTF_8);
         File datasetTtlFile = new File(outputFolder, datasetId + ".ttl.gz");
-        if (datasetTtlFile.exists())
-            datasetTtlFile.delete();
+        if (datasetTtlFile.exists()) {
+            LOG.trace("Deleting old ttl.gz file {}...", datasetTtlFile);
+            Files.delete(datasetTtlFile.toPath());
+        }
 
         LOG.trace("Generating TTL zip file {}...", datasetTtlFile);
         FileOutputStream datasetTtlFileStream = new FileOutputStream(datasetTtlFile);
@@ -201,7 +225,6 @@ public class Updater {
         writer.close();
         gzipDatasetTtlStream.close();
         datasetTtlFileStream.close();
-        //LOG.trace("Deleting TTL zip file {}...", datasetTtlFile);
-        //Files.deleteIfExists(datasetTtlFile.toPath());
+        return datasetTtlFile;
     }
 }

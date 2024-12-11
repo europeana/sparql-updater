@@ -1,8 +1,8 @@
-package europeana.sparql.updater;
+package europeana.sparql.updater.virtuoso;
 
 import com.apicatalog.jsonld.StringUtils;
+import europeana.sparql.updater.Dataset;
 import europeana.sparql.updater.Dataset.State;
-import europeana.sparql.updater.SparqlClient.QueryHandler;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.logging.log4j.LogManager;
@@ -20,9 +20,9 @@ import java.util.regex.Pattern;
  * A SPARQL client for querying the Virtuoso SPARQL endpoint. Used for getting the ingest status of the datasets in
  * Virtuoso.
  */
-public class EuropeanaSparqlEndpoint {
+public class EuropeanaSparqlClient {
 
-    private static final Logger LOG = LogManager.getLogger(EuropeanaSparqlEndpoint.class);
+    private static final Logger LOG = LogManager.getLogger(EuropeanaSparqlClient.class);
 
     private static final Pattern DATASET_URI_PATTERN = Pattern
             .compile("http://data.europeana.eu/dataset/(\\d+)(_new)?");
@@ -31,24 +31,30 @@ public class EuropeanaSparqlEndpoint {
     String baseUrl;
 
     /**
-     * Create
-     * @param baseUrl
+     * Intialize a new Virtuoso client
+     * @param baseUrl the url where to connect to
      */
-    public EuropeanaSparqlEndpoint(String baseUrl) {
+    public EuropeanaSparqlClient(String baseUrl) {
         this.baseUrl = baseUrl;
 
         sparqlClient = new SparqlClient(baseUrl);
         //sparqlClient.setRetries(3);
     }
 
-    public void setDebug(boolean debug) {
-        sparqlClient.setDebug(debug);
-    }
-
-    public int query(String queryString, QueryHandler handler) {
+    /**
+     * Run a sparl query
+     * @param queryString the query to execute
+     * @param handler a QueryHandler that specifies what to do with the response
+     * @return the number of returned results
+     */
+    public int query(String queryString, AbstractQueryResponseHandler handler) {
         return sparqlClient.query(queryString, handler);
     }
 
+    /**
+     * List all datasets available in SPARQL
+     * @return Map of
+     */
     public Map<Dataset, Dataset> listDatasets() {
         LOG.info("Listing SPARQL datasets...");
         final Map<Dataset, Dataset> datasets = new HashMap<>();
@@ -56,7 +62,7 @@ public class EuropeanaSparqlEndpoint {
         return datasets;
     }
 
-    private class HandleQueryResult extends QueryHandler {
+    private class HandleQueryResult extends AbstractQueryResponseHandler {
         private Map<Dataset, Dataset> datasets;
         public HandleQueryResult(Map<Dataset, Dataset> datasets) {
             this.datasets = datasets;
@@ -78,7 +84,7 @@ public class EuropeanaSparqlEndpoint {
                     if (!query.isEmpty()) {
                         String date = query.get(0).getLiteral("d").getString();
                         ds.setTimestampSparql(Instant.parse(date));
-                        LOG.trace("SPARQL dataset {} has date {}", ds, ds.timestampSparql);
+                        LOG.trace("SPARQL dataset {} has date {}", ds, ds.getTimestampFtp());
                     } else {
                         LOG.warn("SPARQL dataset {} has no modified date!", ds);
                         datasetsInconsistent.add(ds);
