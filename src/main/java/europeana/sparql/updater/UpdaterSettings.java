@@ -20,7 +20,20 @@ public class UpdaterSettings {
 
     private static final Logger LOG = LogManager.getLogger(UpdaterSettings.class);
 
-    @Value("${update.onstartup}")
+     @Value("${ftp.hostname}")
+    private String ftpHostName;
+    @Value("${ftp.port}")
+    private Integer ftpPort;
+    @Value("${ftp.path}")
+    private String ftpPath;
+    @Value("${ftp.username}")
+    private String ftpUsername;
+    @Value("${ftp.password}")
+    private String ftpPassword;
+    @Value("${ftp.checksum:false}")
+    private Boolean ftpChecksum;
+
+    @Value("${update.onstartup:false}")
     private Boolean doUpdateOnStartup;
     @Value("${update.datasets}")
     private String updateDatasets;
@@ -49,33 +62,60 @@ public class UpdaterSettings {
     @PostConstruct
     private void logImportantSettings() {
         LOG.info("Configuration:");
+        LOG.info("  FTP server = {}:{}{}", ftpHostName, ftpPort, ftpPath);
+        LOG.info("  Virtuoso endpoint = {}:{}", virtuosoEndpoint, virtuosoPort);
         if (updateDatasets == null || updateDatasets.isBlank()) {
-            LOG.info("Data sets: ALL");
+            LOG.info("  Data sets: ALL");
         } else {
             String[] datasetIds = updateDatasets.split(",");
             this.datasetsList = new ArrayList<>(datasetIds.length);
             for (String dsId : datasetIds) {
                 datasetsList.add(new Dataset(dsId));
             }
-            LOG.info("Data sets: {}", datasetsList);
+            LOG.info("  Data sets: {}", datasetsList);
         }
-        LOG.info("Update on startup = {}", doUpdateOnStartup);
+        LOG.info("  Update on startup = {}", doUpdateOnStartup);
         if (slackWebhook == null || slackWebhook.isBlank()) {
-            LOG.info("No reporting to Slack configured");
+            LOG.info("  No reporting to Slack configured");
         } else {
-            LOG.info("Reporting to Slack enabled");
+            LOG.info("  Reporting to Slack enabled");
         }
-
-        LOG.info("  Virtuoso endpoint = {}", virtuosoEndpoint);
-        LOG.info("  Virtuoso port = {}", virtuosoPort);
     }
 
-    public Boolean doUpdateOnStartup() {
+    public String getFtpHostName() {
+        return ftpHostName;
+    }
+
+    public Integer getFtpPort() {
+        return ftpPort;
+    }
+
+    public String getFtpPath() {
+        return ftpPath;
+    }
+
+    public String getFtpUsername() {
+        return ftpUsername;
+    }
+
+    public String getFtpPassword() {
+        return ftpPassword;
+    }
+
+    public Boolean getFtpChecksum() {
+        return ftpChecksum;
+    }
+
+    /**
+     *
+     * @return true if the updater should run an update directly after startup, otherwise false
+     */
+    public boolean doUpdateOnStartup() {
         return doUpdateOnStartup;
     }
 
     public List<Dataset> getDatasetsList() {
-        return datasetsList;
+        return datasetsList.stream().toList();
     }
 
     public String getUpdateCronSchedule() {

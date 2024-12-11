@@ -55,6 +55,13 @@
             <artifactId>protobuf-java</artifactId>
             <version>3.25.5</version>
         </dependency>
+        <!-- Google GSON seems to be required by version 4.10 of Jena
+         https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.11.0</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.jena</groupId>
             <artifactId>jena-arq</artifactId>
@@ -100,7 +107,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>europeana.sparql.updater.Scheduler</mainClass>
+                    <mainClass>europeana.sparql.updater.UpdaterApplication</mainClass>
                 </configuration>
                 <executions>
                     <execution>
@@ -119,8 +126,7 @@
                 <version>11.1.0</version>
                 <configuration>
                     <nvdApiKeyEnvironmentVariable>NVD_APIKEY</nvdApiKeyEnvironmentVariable>
-                    <!-- Required when running on Jenkins as the cisa.gov website is blocking Hetzner servers -->
-                    <knownExploitedUrl>https://artifactory.eanadev.org/artifactory/ext-release-local/gov/cisa/www/known_exploited_vulnerabilities.json</knownExploitedUrl>
+                    <!--                    <knownExploitedUrl>https://artifactory.eanadev.org/artifactory/ext-release-local/gov/cisa/www/known_exploited_vulnerabilities.json</knownExploitedUrl>-->
                     <failBuildOnCVSS>8</failBuildOnCVSS>
                     <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
                     <!--                    <suppressionFiles>-->
