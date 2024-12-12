@@ -41,8 +41,6 @@ public class UpdaterSettings {
     @Value("${update.cron}")
     private String updateCronSchedule;
 
-    @Value("${isql.file}")
-    private String isqlFile;
     @Value("${ttl.folder}")
     private String ttlFolder;
     @Value("${sql.folder}")
@@ -56,6 +54,9 @@ public class UpdaterSettings {
     private String virtuosoUser;
     @Value("${virtuoso.password}")
     private String virtuosoPassword;
+    @Value("${virtuoso.isql.file}")
+    private String virtuosoIsql;
+
     @Value("${slack.webhook}")
     private String slackWebhook;
 
@@ -122,8 +123,8 @@ public class UpdaterSettings {
         return updateCronSchedule;
     }
 
-    public String getIsqlFile() {
-        return isqlFile;
+    public String getVirtuosoIsql() {
+        return virtuosoIsql;
     }
 
     public String getTtlFolder() {

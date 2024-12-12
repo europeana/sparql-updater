@@ -98,7 +98,7 @@ public class EuropeanaDatasetFtpServer {
                     break;
                 }
             }
-            LOG.info("Set {} downloaded as file {}", datasetId, outputFile);
+            LOG.debug("Set {} downloaded as file {}", datasetId, outputFile);
         } catch (IOException io) {
             throw new DownloadException("Error listing files", io);
         }
