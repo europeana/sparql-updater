@@ -9,6 +9,10 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class UpdaterApplication {
 
+    /**
+     * Start the application
+     * @param args command line arguments (see also UpdaterSettings class)
+     */
     public static void main(String[] args) {
         SpringApplication.run(UpdaterApplication.class, args);
     }

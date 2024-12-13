@@ -31,27 +31,32 @@ public class UpdaterService {
     private static final Logger LOG = LogManager.getLogger(UpdaterService.class);
 
     private static final int VIRTUOSO_MAX_WAIT_TIME = 60; // seconds
-    String nodeId;
+    String serverId;
     EuropeanaSparqlClient sparql;
     EuropeanaDatasetFtpServer ftpServer;
     VirtuosoGraphManagerCl sparqlGraphManager;
 
     /**
-     * Initialize
-     * @param nodeId
-     * @param sparql
-     * @param ftpServer
-     * @param sparqlGraphManager
+     * Initialize a new updater service
+     * @param serverId the id of the server on which the update is done
+     * @param ftpServer the Europeana FTP server that hosts the dataset sources
+     * @param sparql a Europeana sparql client for doing sparql queries
+     * @param virtuosoGraphManangerCl the command-line utility for interacting with Virtuoso (isql)
      */
-    public UpdaterService(String nodeId, EuropeanaSparqlClient sparql, EuropeanaDatasetFtpServer ftpServer,
-                          VirtuosoGraphManagerCl sparqlGraphManager) {
-        super();
-        this.nodeId = nodeId;
-        this.sparql = sparql;
+    public UpdaterService(String serverId, EuropeanaDatasetFtpServer ftpServer, EuropeanaSparqlClient sparql,
+                          VirtuosoGraphManagerCl virtuosoGraphManangerCl) {
+        this.serverId = serverId;
         this.ftpServer = ftpServer;
-        this.sparqlGraphManager = sparqlGraphManager;
+        this.sparql = sparql;
+        this.sparqlGraphManager = virtuosoGraphManangerCl;
     }
 
+    /**
+     * Start an update
+     * @param datasets only update the provided list of datasets, if null all datasets are updated
+     * @return an UpdateReport
+     * @throws VirtuosoCmdLineException when Virtuoso is not available
+     */
     public UpdateReport runUpdate(List<Dataset> datasets) throws VirtuosoCmdLineException {
         // Check if Virtuoso is up and running first, will throw error if not available in time
         sparqlGraphManager.waitUntilAvailable(VIRTUOSO_MAX_WAIT_TIME);
@@ -81,13 +86,14 @@ public class UpdaterService {
             }
         }
 
-        UpdateReport report = new UpdateReport(nodeId);
+        LOG.info("Processing {} datasets...", datasetsToUpdate.size());
+        UpdateReport report = new UpdateReport(serverId);
         for (Dataset ds : datasetsToUpdate) {
             try {
                 updateSet(report, ds);
             } catch (UpdaterException | IOException  e) {
                 LOG.error("Failed to update dataset {}", ds, e);
-                report.failed(ds, StringUtils.isEmpty(e.getMessage()) ? ("Exception " + e.getClass().getSimpleName())
+                report.addFailed(ds, StringUtils.isEmpty(e.getMessage()) ? ("Exception " + e.getClass().getSimpleName())
                         : e.getMessage());
             }
         }
@@ -96,51 +102,52 @@ public class UpdaterService {
     }
 
     private void updateSet(UpdateReport report, Dataset ds) throws UpdaterException, IOException {
-        CommandResult result = null;
+        LOG.debug("Processing dataset {}...", ds);
+        CommandResult result;
         switch (ds.getState()) {
             case CORRUPT -> {
                 LOG.warn("Dataset {} is corrupt and will be removed", ds.getId());
                 sparqlGraphManager.removeTmpGraph(ds.getId());
                 result = createOrUpdateDataset(ds);
                 if (result.isSuccess()) {
-                    report.wasFixed(ds);
+                    report.addFixed(ds);
                 } else {
-                    report.failed(ds, result.getErrorMessage());
+                    report.addFailed(ds, result.getErrorMessage());
                 }
             }
             case MISSING -> {
-                LOG.debug("Dataset {} is new and will be downloaded", ds.getId());
+                LOG.info("Dataset {} is new and will be downloaded", ds.getId());
                 result = createOrUpdateDataset(ds);
                 if (result.isSuccess()) {
-                    report.wasCreated(ds);
+                    report.addCreated(ds);
                 } else {
-                    report.failed(ds, result.getErrorMessage());
+                    report.addFailed(ds, result.getErrorMessage());
                 }
             }
             case OUTDATED -> {
-                LOG.debug("Dataset {} is outdated and will be downloaded again", ds.getId());
+                LOG.info("Dataset {} is outdated and will be downloaded again", ds.getId());
                 result = createOrUpdateDataset(ds);
                 if (result.isSuccess()) {
-                    report.wasUpdated(ds);
+                    report.addUpdated(ds);
                 } else {
-                    report.failed(ds, result.getErrorMessage());
+                    report.addFailed(ds, result.getErrorMessage());
                 }
             }
             case UP_TO_DATE -> {
-                report.wasUnchanged(ds);
+                report.addUnchanged(ds);
                 LOG.trace("No changes to dataset {} ", ds.getId());
             }
             case TO_REMOVE -> {
-                LOG.debug("Dataset {} is no longer available and will be removed", ds.getId());
+                LOG.info("Dataset {} is no longer available and will be removed", ds.getId());
                 result = sparqlGraphManager.removeTmpGraph(ds.getId());
                 if (!result.isSuccess()) {
-                    report.failed(ds, result.getErrorMessage());
+                    report.addFailed(ds, result.getErrorMessage());
                 } else {
                     result = sparqlGraphManager.removeObsoleteGraph(ds.getId());
                     if (result.isSuccess()) {
-                        report.wasRemoved(ds);
+                        report.addRemoved(ds);
                     } else {
-                        report.failed(ds, result.getErrorMessage());
+                        report.addFailed(ds, result.getErrorMessage());
                     }
                 }
             }
@@ -173,7 +180,7 @@ public class UpdaterService {
         if (LOG.isInfoEnabled()) {
             Instant endTime = Instant.now();
             Duration diff = Duration.between(startTime, endTime);
-            LOG.info(String.format("Ingesting dataset \"%s\" took: %d:%02d:%02d", datasetId, diff.toHours(),
+            LOG.info(String.format("Ingesting dataset %s took: %d:%02d:%02d", datasetId, diff.toHours(),
                     diff.toMinutesPart(), diff.toSecondsPart()));
         }
         return res;
@@ -181,7 +188,6 @@ public class UpdaterService {
 
     private File prepareVirtuosoImportFiles(String datasetId, File dsZipFile, Instant datasetTimestampAtFtp) throws IOException {
         File outputFolder = dsZipFile.getParentFile();
-//		FileUtils.write(new File(outputFolder, datasetId+".ttl.graph"), "http://data.europeana.eu/dataset/"+datasetId, StandardCharsets.UTF_8);
         File datasetTtlFile = new File(outputFolder, datasetId + ".ttl.gz");
         if (datasetTtlFile.exists()) {
             LOG.trace("Deleting old ttl.gz file {}...", datasetTtlFile);
@@ -189,42 +195,46 @@ public class UpdaterService {
         }
 
         LOG.trace("Generating TTL zip file {}...", datasetTtlFile);
-        FileOutputStream datasetTtlFileStream = new FileOutputStream(datasetTtlFile);
-        GZIPOutputStream gzipDatasetTtlStream = new GZIPOutputStream(datasetTtlFileStream);
-        Writer writer = new OutputStreamWriter(gzipDatasetTtlStream, StandardCharsets.UTF_8);
+        try (FileOutputStream datasetTtlFileStream = new FileOutputStream(datasetTtlFile);
+             GZIPOutputStream gzipDatasetTtlStream = new GZIPOutputStream(datasetTtlFileStream);
+             Writer writer = new OutputStreamWriter(gzipDatasetTtlStream, StandardCharsets.UTF_8)) {
 
+            processZipFile(dsZipFile, writer);
+
+            // add the triple with the last modification timestamp from the FTP server
+            writer.write("\n\n<http://data.europeana.eu/dataset/");
+            writer.write(datasetId);
+            writer.write("> <http://purl.org/dc/terms/modified> \"");
+            writer.write(datasetTimestampAtFtp.toString());
+            writer.write("\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n");
+        }
+        return datasetTtlFile;
+    }
+
+    private void processZipFile(File dsZipFile, Writer writer) throws IOException {
         boolean firstRecord = true;
         int nrEntries = 0;
-        final ZipInputStream zip = new ZipInputStream(new FileInputStream(dsZipFile));
-        ZipEntry entry = zip.getNextEntry();
-        while (entry != null) {
-            String edmRdf = IOUtils.toString(zip, StandardCharsets.UTF_8);
-            String[] lines = edmRdf.split("\n");
-            for (String line : lines) {
-                if (firstRecord || !line.startsWith("@prefix")) {
-                    writer.write(line);
-                    writer.write("\n");
-                }
+        try (ZipInputStream zip = new ZipInputStream(new FileInputStream(dsZipFile))) {
+            ZipEntry entry = zip.getNextEntry();
+            while (entry != null) {
+                writeLines(writer, firstRecord, zip);
+                firstRecord = false;
+                zip.closeEntry();
+                entry = zip.getNextEntry();
+                nrEntries++;
             }
-            firstRecord = false;
-
-            zip.closeEntry();
-            entry = zip.getNextEntry();
-            nrEntries++;
         }
-        zip.close();
-        LOG.trace("Adding {} entries to file {}", nrEntries, dsZipFile);
+        LOG.trace("Added {} entries to file {}", nrEntries, dsZipFile);
+    }
 
-        // add the triple with the last modification timestamp from the FTP server
-        writer.write("\n\n<http://data.europeana.eu/dataset/");
-        writer.write(datasetId);
-        writer.write("> <http://purl.org/dc/terms/modified> \"");
-        writer.write(datasetTimestampAtFtp.toString());
-        writer.write("\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n");
-
-        writer.close();
-        gzipDatasetTtlStream.close();
-        datasetTtlFileStream.close();
-        return datasetTtlFile;
+    private void writeLines(Writer writer, boolean firstRecord, ZipInputStream zip) throws IOException {
+        String edmRdf = IOUtils.toString(zip, StandardCharsets.UTF_8);
+        String[] lines = edmRdf.split("\n");
+        for (String line : lines) {
+            if (firstRecord || !line.startsWith("@prefix")) {
+                writer.write(line);
+                writer.write("\n");
+            }
+        }
     }
 }

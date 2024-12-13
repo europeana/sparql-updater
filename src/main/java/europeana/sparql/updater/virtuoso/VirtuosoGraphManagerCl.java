@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 
 /**
  * A client for the isql command line tool of Virtuoso, which is used to create, update and remove the Europeana
- * datasets in Virtuoso's database.
+ * datasets in Virtuoso's database. See also https://docs.openlinksw.com/virtuoso/virtuoso_clients_isql/
  */
 public class VirtuosoGraphManagerCl {
 
@@ -36,6 +36,15 @@ public class VirtuosoGraphManagerCl {
     private final File ttlImportFolder;
     private final File sqlFolder;
 
+    /**
+     * Initialize a new command line manager for Virtuoso
+     * @param isqlCommand location of Interactive SQL utility in Virtuoso deployment
+     * @param portNumber the port on which to communicate with Virtuoso
+     * @param dbaUser username
+     * @param dbaPassword password
+     * @param ttlImportFolder location for loading TTL.gz files
+     * @param sqlFolder location for loading sql files
+     */
     public VirtuosoGraphManagerCl(File isqlCommand, int portNumber, String dbaUser, String dbaPassword,
                                   File ttlImportFolder, File sqlFolder) {
         super();
@@ -170,7 +179,7 @@ public class VirtuosoGraphManagerCl {
             LOG.debug("Starting process to execute {}...", sqlFile.getName());
             ProcessBuilder processBuilder = new ProcessBuilder(isqlCommand.getAbsolutePath(), String.valueOf(portNumber),
                     dbaUser, dbaPassword,
-                    (LOG.isDebugEnabled() || LOG.isTraceEnabled() ? "VERBOSE=ON" : ""),
+                    (LOG.isDebugEnabled() || LOG.isTraceEnabled() ? "VERBOSE=ON" : "VERBOSE=OFF"),
                     sqlFile.getAbsolutePath());
             Process process = processBuilder.redirectErrorStream(true).start();
             process.waitFor();

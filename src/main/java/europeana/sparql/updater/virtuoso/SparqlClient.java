@@ -1,15 +1,6 @@
 package europeana.sparql.updater.virtuoso;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import org.apache.jena.query.Dataset;
-import org.apache.jena.query.QueryExecution;
-import org.apache.jena.query.QueryExecutionFactory;
-import org.apache.jena.query.QuerySolution;
-import org.apache.jena.query.ResultSet;
+import org.apache.jena.query.*;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
@@ -17,8 +8,13 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
 /**
- * General implementation of a client for querying SPARQL endpoints
+ * General implementation of a client for doing SPARQL queries
  */
 public class SparqlClient {
 
@@ -34,24 +30,37 @@ public class SparqlClient {
                     "http://www.w3.org/2004/02/skos/core#", "skos",
                     "http://www.w3.org/2002/07/owl#", "owl");
 
-    protected final String baseUrl;
+    protected final String sparqlEndpoint;
     protected final Dataset dataset;
     protected String queryPrefix;
 
-    public SparqlClient(String baseUrl) {
-        this(baseUrl, STANDARD_PREFIXES);
+    /**
+     * Initialize a new sparql client that uses the standard list of prefixes
+     * @param sparqlEndpoint the url (and port) to send sparql queries to
+     */
+    public SparqlClient(String sparqlEndpoint) {
+        this(sparqlEndpoint, STANDARD_PREFIXES);
     }
 
-    public SparqlClient(String baseUrl, String queryPrefix) {
-        super();
-        this.baseUrl = baseUrl;
+    /**
+     * Initialize a new sparql client that uses a specific set of prefixes
+     * @param sparqlEndpoint the url (and port) to send sparql queries to
+     * @param queryPrefix the query prefix to use
+     */
+    public SparqlClient(String sparqlEndpoint, String queryPrefix) {
+        this.sparqlEndpoint = sparqlEndpoint;
         this.dataset = null;
-        this.queryPrefix = queryPrefix == null ? "" : queryPrefix;
+        this.queryPrefix = (queryPrefix == null ? "" : queryPrefix);
     }
 
-    public SparqlClient(String baseUrl, Map<String, String> queryPrefixes) {
+    /**
+     * Initialize a new sparql client that uses a specific set of prefixes
+     * @param sparqlEndpoint the url (and port) to send sparql queries to
+     * @param queryPrefixes the query prefixes to use
+     */
+    public SparqlClient(String sparqlEndpoint, Map<String, String> queryPrefixes) {
         super();
-        this.baseUrl = baseUrl;
+        this.sparqlEndpoint = sparqlEndpoint;
         this.dataset = null;
         StringBuilder tmp = new StringBuilder();
         for (Entry<String, String> ns : queryPrefixes.entrySet()) {
@@ -64,20 +73,34 @@ public class SparqlClient {
         queryPrefix = tmp.toString();
     }
 
+    /**
+     * Initialize a new sparql client that uses a specific set of prefixes and a specific datset
+     * @param dataset the dataset to use for queries
+     */
     public SparqlClient(Dataset dataset) {
         this(dataset, STANDARD_PREFIXES);
     }
 
+    /**
+     * Initialize a new sparql client that uses a specific prefix and a specific datset
+     * @param dataset the dataset to use when generating queries
+     * @param queryPrefix the query prefix to use
+     */
     public SparqlClient(Dataset dataset, String queryPrefix) {
         super();
         this.dataset = dataset;
-        this.baseUrl = null;
+        this.sparqlEndpoint = null;
         this.queryPrefix = queryPrefix;
     }
 
+    /**
+     * Initialize a new sparql client that uses a specific set of prefixes and a specific dataset
+     * @param dataset the dataset to use when generating queries
+     * @param queryPrefixes the query prefixes to use
+     */
     public SparqlClient(Dataset dataset, Map<String, String> queryPrefixes) {
         super();
-        this.baseUrl = null;
+        this.sparqlEndpoint = null;
         this.dataset = dataset;
         StringBuilder tmp = new StringBuilder();
         for (Entry<String, String> ns : queryPrefixes.entrySet()) {
@@ -102,13 +125,18 @@ public class SparqlClient {
         return solutions;
     }
 
+    /**
+     * Execute a sparl query and process the response with the provided handler
+     * @param queryString the query to execute
+     * @param handler a QueryResponseHandler that processes the results of the query
+     * @return the number of processed query results
+     */
     public int query(String queryString, AbstractQueryResponseHandler handler) {
         int wdCount = 0;
         String fullQuery = queryPrefix + queryString;
         try (QueryExecution qexec = createQueryExecution(fullQuery)) {
             ResultSet results = qexec.execSelect();
-//            ResultSetFormatter.out(System.out, results, query);
-            while (results.hasNext() && !callHandlerForItem(handler, results.next())) {
+            while (results.hasNext() && callHandlerForItem(handler, results.next())) {
                 wdCount++;
             }
             LOG.debug("Query finished - processed {} resources", wdCount);
@@ -132,60 +160,11 @@ public class SparqlClient {
     }
 
     private QueryExecution createQueryExecution(String fullQuery) {
-        if (baseUrl != null)
-            return QueryExecutionFactory.sparqlService(this.baseUrl, fullQuery);
+        if (sparqlEndpoint != null) {
+            return QueryExecutionFactory.sparqlService(this.sparqlEndpoint, fullQuery);
+        }
         return QueryExecutionFactory.create(fullQuery, dataset);
     }
-
-//	public int queryWithPaging(String queryString, int resultsPerPage, String orderVariableName, Handler handler) throws Exception {
-//		int[] offsett=new int[] {0};
-//		boolean concluded=false;
-//		while (!concluded) {
-//			String fullQuery = String.format("%s %s\n%s" + 
-//					"LIMIT %d\n" + 
-//					"OFFSET %d ", queryPrefix, queryString, (orderVariableName ==null ? "" : "ORDER BY ("+orderVariableName+")\n"), resultsPerPage, offsett[0]);
-//			if(debug)
-//				System.out.println(fullQuery);
-//			RetryExec<Boolean, Exception> exec=new RetryExec<Boolean, Exception>(retries) {
-//				@Override
-//				protected Boolean doRun() throws Exception {
-//					QueryExecution qexec = createQueryExecution(fullQuery);
-//					try {
-//						ResultSet results = qexec.execSelect();
-//			//            ResultSetFormatter.out(System.out, results, query);
-//						if(!results.hasNext())
-//							return true;
-//						while(results.hasNext()) {
-//							Resource resource = null;
-//							QuerySolution hit = results.next();
-//							try {
-//								if (!handler.handleSolution(hit)) {
-//									System.err.println("RECEIVED HANDLER ABORT");
-//									return true;
-////									break;
-//								}
-//							} catch (Exception e) {
-//								System.err.println("Error on record handler: "+(resource==null ? "?" : resource.getURI()));
-//								e.printStackTrace();
-//								System.err.println("PROCEEDING TO NEXT URI");
-//							}
-//							offsett[0]++;
-//						}
-//						if(debug)
-//							System.out.printf("QUERY FINISHED - %d resources\n", offsett);            
-//						return false;
-//					} catch (Exception ex) {
-//						System.err.println("WARN: (will retry 3x) Error on query: "+fullQuery);
-//						throw ex;
-//					} finally {
-//						qexec.close();
-//					}
-//				}
-//			};
-//			concluded=exec.run();
-//		}
-//		return offsett[0];
-//	}
 
     public void createAllStatementsAboutAndReferingResource(String resourceUri, Model createInModel) {
         createAllStatementsAboutResource(resourceUri, createInModel);

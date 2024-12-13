@@ -14,6 +14,8 @@ import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.TimeZone;
 
 /**
@@ -67,7 +69,7 @@ public class UpdateScheduler {
 
         public void run()  {
             LOG.info("Starting update...");
-            File isqlCommand = new File(settings.getIsqlFile());
+            File isqlCommand = new File(settings.getVirtuosoIsql());
             File ttlFolder = new File(settings.getTtlFolder());
             File sqlFolder = new File(settings.getSqlFolder());
             if (!ttlFolder.exists()) {
@@ -86,11 +88,10 @@ public class UpdateScheduler {
                     settings.getFtpPath(), settings.getFtpUsername(), settings.getFtpPassword(), settings.getFtpChecksum());
             EuropeanaSparqlClient sparqlEndpoint = new EuropeanaSparqlClient(settings.getVirtuosoEndpoint());
 
-            // TODO in k8s get nodeId
-            String nodeId = settings.getVirtuosoEndpoint();
+            String nodeId = getServerId();
             UpdateReport report;
             try {
-                report = new UpdaterService(nodeId, sparqlEndpoint, ftpServer, graphManager).runUpdate(settings.getDatasetsList());
+                report = new UpdaterService(nodeId, ftpServer, sparqlEndpoint, graphManager).runUpdate(settings.getDatasetsList());
             } catch (UpdaterException ue) {
                 LOG.error("Error running the update", ue);
                 report = new UpdateReport(nodeId, ue);
@@ -107,6 +108,23 @@ public class UpdateScheduler {
                 Slack.publishUpdateReport(report, settings.getSlackWebhook());
             }
         }
+    }
+
+    private static String getServerId() {
+        String result = "unknown";
+        try {
+            InetAddress inetAddress = InetAddress.getLocalHost();
+            result = inetAddress.getCanonicalHostName();
+            if (result == null) {
+                result = inetAddress.getHostName();
+            }
+            if (result == null) {
+                result = inetAddress.getHostAddress();
+            }
+        } catch (UnknownHostException e) {
+            LOG.warn("Unable to retrieve local IP address", e);
+        }
+        return result;
     }
 
     /**

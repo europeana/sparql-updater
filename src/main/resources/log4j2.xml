@@ -14,17 +14,19 @@
             <AppenderRef ref="Console"/>
         </Root>
 
-        <Logger name="europeana.sparql.updater" level="TRACE"/>
+        <Logger name="europeana.sparql.updater" level="INFO"/>
 
-        <!-- Use DEBUG to see command exit values, use TRACE to see Virtuoso output -->
-        <Logger name="europeana.sparql.updater.VirtuosoGraphManagerCl" level="DEBUG"/>
+        <Logger name="europeana.sparql.updater.UpdaterService" level="INFO"/>
 
-        <!-- Set to DEBUG to see commands sent to SPARQL -->
+        <!-- Set to TRACE to log all found datasets -->
+        <Logger name="europeana.sparql.updater.EuropeanaDatasetFtpServer" level="INFO"/>
+
+        <!-- Set to DEBUG to log command exit values, use TRACE to log Virtuoso output -->
+        <Logger name="europeana.sparql.updater.virtuoso.VirtuosoGraphManagerCl" level="INFO"/>
+
+        <!-- Set to DEBUG to log commands sent to SPARQL -->
         <Logger name="europeana.sparql.updater.virtuoso.SparqlClient" level="INFO"/>
-        <Logger name="europeana.sparql.updater.virtuoso.EuropeanaSparqlClient" level="TRACE"/>
-
-        <Logger name="europeana.sparql.updater.UpdaterService" level="TRACE"/>
-        <Logger name="europeana.sparql.updater.Dataset" level="DEBUG"/>
+        <Logger name="europeana.sparql.updater.virtuoso.EuropeanaSparqlClient" level="INFO"/>
 
     </Loggers>
 </Configuration>

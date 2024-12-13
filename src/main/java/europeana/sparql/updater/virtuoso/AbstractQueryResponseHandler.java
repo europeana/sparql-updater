@@ -9,7 +9,7 @@ public abstract class AbstractQueryResponseHandler {
 
     /**
      * Handler of the QuerySolution returned by the Sparql client
-     * @param solution
+     * @param solution the query solution to process
      * @return true to continue processing the next URI, false to abort
      */
     public boolean handleSolution(QuerySolution solution) {
