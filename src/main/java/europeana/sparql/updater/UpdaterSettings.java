@@ -81,6 +81,12 @@ public class UpdaterSettings {
         } else {
             LOG.info("  Reporting to Slack enabled");
         }
+
+        if (!virtuosoPassword.equals(System.getenv("DBA_PASSWORD"))) {
+            LOG.warn("Configured password does not match value of DBA_PASSWORD environment variable!");
+        } else {
+            LOG.info("pwd ok");
+        }
     }
 
     public String getFtpHostName() {
