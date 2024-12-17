@@ -6,9 +6,9 @@ spec:
   clusterIP: None # create headless service so each pod gets its own IP
   # selector provided via kustomize
   ports:
-    - name: http
+    - name: http-web
       port: 8890
       targetPort: 8890
-    - name: http
+    - name: http-client
       port: 1111
       targetPort: 1111
