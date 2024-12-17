@@ -58,11 +58,6 @@ public class UpdateScheduler {
         if (settings.doUpdateOnStartup()) {
             new DoUpdate(settings).run();
         }
-        File ttlFolder = new File(settings.getTtlFolder());
-        if (!ttlFolder.exists()) {
-            LOG.info("Creating folder {}", ttlFolder);
-            ttlFolder.mkdir();
-        }
     }
 
     private static class DoUpdate implements Runnable{

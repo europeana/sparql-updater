@@ -18,15 +18,14 @@ RUN export JAVA_HOME
 ENV ELASTIC_APM_VERSION=1.48.1
 ADD https://repo1.maven.org/maven2/co/elastic/apm/elastic-apm-agent/$ELASTIC_APM_VERSION/elastic-apm-agent-$ELASTIC_APM_VERSION.jar /usr/local/elastic-apm-agent.jar
 
-# Install updater
+# Install Virtuoso config files
 COPY ./src/docker/load-edm.sql /initdb.d/load-edm.sql
 COPY ./src/docker/edm-v527-160401.owl /opt/virtuoso-opensource/vad/edm-v527-160401.owl
+COPY ./src/docker/virtuoso.ini /opt/virtuoso-opensource/database/virtuoso.ini
+# Install SPARQL updater
 COPY ./target/sparql-updater.jar /opt/sparql-updater/sparql-updater.jar
-COPY --chmod=777 ./src/docker/start_virtuoso_and_updater.sh /start_virtuoso_and_updater.sh
 
-# Allowed folder for Virtuoso to read files, linked to storage
-RUN ln -s /mnt/data/ttl-import /usr/share/proj
-RUN ln -s /mnt/data/virtuoso /database
+COPY --chmod=777 ./src/docker/start_virtuoso_and_updater.sh /start_virtuoso_and_updater.sh
 
 #VOLUME ["/database", "/ingest", "/ttl-import" ]
 EXPOSE 8090
