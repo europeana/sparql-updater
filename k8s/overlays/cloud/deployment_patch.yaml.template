@@ -32,11 +32,11 @@ spec:
               memory: "${MEMORY_LIMIT}Mi"
               cpu: "${CPU_LIMIT}m"
           volumeMounts:
-          - name: pvclaim-10G
+          - name: pvclaim-10gb
             mountPath: /mnt/data
   volumeClaimTemplates:
   - metadata:
-      name: pvclaim-10G
+      name: pvclaim-10gb
     spec:
       storageClassName: ibmc-vpc-block-general-purpose
       accessModes:
