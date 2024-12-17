@@ -3,5 +3,6 @@
 !/src/docker/*.owl
 !/src/docker/*.sql
 !/src/docker/*.sh
+!/src/docker/virtuoso.ini
 !/target/sparql-updater.jar
 **/*.user.properties
