@@ -25,8 +25,8 @@ COPY ./target/sparql-updater.jar /opt/sparql-updater/sparql-updater.jar
 COPY --chmod=777 ./src/docker/start_virtuoso_and_updater.sh /start_virtuoso_and_updater.sh
 
 # Allowed folder for Virtuoso to read files, linked to storage
-RUN ln -s /usr/share/proj /mnt/data/ttl-import
-RUN ln -s /database /mnt/data/virtuoso
+RUN ln -s /mnt/data/ttl-import /usr/share/proj
+RUN ln -s /mnt/data/virtuoso /database
 
 #VOLUME ["/database", "/ingest", "/ttl-import" ]
 EXPOSE 8090
