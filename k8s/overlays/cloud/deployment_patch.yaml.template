@@ -26,17 +26,17 @@ spec:
                       -Delastic.apm.environment=${K8S_NAMESPACE}"
           resources:
             requests:
-              memory: "${MEMORY_REQUEST}M"
+              memory: "${MEMORY_REQUEST}Mi"
               cpu: "${CPU_REQUEST}m"
             limits:
-              memory: "${MEMORY_LIMIT}M"
+              memory: "${MEMORY_LIMIT}Mi"
               cpu: "${CPU_LIMIT}m"
           volumeMounts:
-          - name: sparql-pvclaim
-            mountPath: /mnt/database
+          - name: pvclaim-10G
+            mountPath: /mnt/data
   volumeClaimTemplates:
   - metadata:
-      name: pvclaim
+      name: pvclaim-10G
     spec:
       storageClassName: ibmc-vpc-block-general-purpose
       accessModes:

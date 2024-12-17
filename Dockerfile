@@ -24,9 +24,9 @@ COPY ./src/docker/edm-v527-160401.owl /opt/virtuoso-opensource/vad/edm-v527-1604
 COPY ./target/sparql-updater.jar /opt/sparql-updater/sparql-updater.jar
 COPY --chmod=777 ./src/docker/start_virtuoso_and_updater.sh /start_virtuoso_and_updater.sh
 
-#RUN mkdir -p /ingest
-#RUN ln -s /usr/share/proj /ttl-import
-RUN ln -s /opt/virtuoso-opensource/database /mnt/database
+# Allowed folder for Virtuoso to read files, linked to storage
+RUN ln -s /usr/share/proj /mnt/data/ttl-import
+RUN ln -s /database /mnt/data/virtuoso
 
 #VOLUME ["/database", "/ingest", "/ttl-import" ]
 EXPOSE 8090
