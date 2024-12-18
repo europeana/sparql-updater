@@ -21,6 +21,9 @@ ADD https://repo1.maven.org/maven2/co/elastic/apm/elastic-apm-agent/$ELASTIC_APM
 # Install Virtuoso config files
 COPY ./src/docker/load-edm.sql /initdb.d/load-edm.sql
 COPY ./src/docker/edm-v527-160401.owl /opt/virtuoso-opensource/vad/edm-v527-160401.owl
+# Folder /database/tmp-ingest is used to temporarily store files for ingestion and Virtuoso should be
+# be configured to have access to that folder
+ENV VIRT_Parameters_DirsAllowed=.,../vad,/database/tmp-ingest
 
 # Install SPARQL updater
 COPY ./target/sparql-updater.jar /opt/sparql-updater/sparql-updater.jar
