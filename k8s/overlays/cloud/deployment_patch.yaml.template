@@ -33,7 +33,7 @@ spec:
               cpu: "${CPU_LIMIT}m"
           volumeMounts:
           - name: pvclaim-10gb
-            mountPath: /mnt/data
+            mountPath: /database
   volumeClaimTemplates:
   - metadata:
       name: pvclaim-10gb

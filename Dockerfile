@@ -22,12 +22,12 @@ ADD https://repo1.maven.org/maven2/co/elastic/apm/elastic-apm-agent/$ELASTIC_APM
 COPY ./src/docker/load-edm.sql /initdb.d/load-edm.sql
 COPY ./src/docker/edm-v527-160401.owl /opt/virtuoso-opensource/vad/edm-v527-160401.owl
 COPY ./src/docker/virtuoso.ini /opt/virtuoso-opensource/database/virtuoso.ini
+
 # Install SPARQL updater
 COPY ./target/sparql-updater.jar /opt/sparql-updater/sparql-updater.jar
 
 COPY --chmod=777 ./src/docker/start_virtuoso_and_updater.sh /start_virtuoso_and_updater.sh
 
-#VOLUME ["/database", "/ingest", "/ttl-import" ]
 EXPOSE 8090
 EXPOSE 1111
 ENTRYPOINT ["/start_virtuoso_and_updater.sh"]
