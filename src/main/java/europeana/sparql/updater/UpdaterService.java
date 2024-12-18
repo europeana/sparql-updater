@@ -173,6 +173,8 @@ public class UpdaterService {
             if (res.isSuccess()) {
                 res = sparqlGraphManager.renameTmpGraph(datasetId);
             }
+        } else {
+            LOG.error("Error creating or updating dataset {}: reason: {}", ds, res.getErrorMessage());
         }
         LOG.trace("Deleting ttl.gz file {}", dsTtlFile);
         Files.delete(dsTtlFile.toPath());

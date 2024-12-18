@@ -29,19 +29,21 @@ public final class Slack {
      */
     public static void publishUpdateReport(UpdateReport report, String slackWebhook) {
         String message = report.printSummary();
-        message = String.format("{\"text\": \"%s\"}", message.replace("\n", "\\n"));
+        message = message.replace("\n", "\\n").replace("\"", "\\\"");
+        message = String.format("{\"text\": \"%s\"}", message);
         LOG.info("Sending Slack message : {}", message);
         try {
             HttpPost httpPost = new HttpPost(slackWebhook);
-            StringEntity entity = new StringEntity(message);
-            httpPost.setEntity(entity);
+            httpPost.setEntity(new StringEntity(message));
             httpPost.setHeader("Accept", "application/json");
             httpPost.setHeader("Content-type", "application/json");
             try (CloseableHttpClient httpClient = HttpClients.createDefault();
                  CloseableHttpResponse response = httpClient.execute(httpPost)) {
-                LOG.info("Received status {} while calling Slack!", response.getStatusLine().getStatusCode());
                 if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-                    LOG.info(" Successfully sent Slack message!");
+                    LOG.info(" Successfully sent Slack message.");
+                } else {
+                    LOG.error("Error sending report to Slack! {}: {}", response.getStatusLine().getStatusCode(),
+                            response.getStatusLine().getReasonPhrase());
                 }
             }
         } catch (IOException e) {

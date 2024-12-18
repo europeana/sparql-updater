@@ -143,7 +143,7 @@ public class UpdateReport {
                 .append(removed.size()).append(" deleted, ")
                 .append(unchanged.size()).append(" unchanged.");
         if (failed.size() > 0) {
-            s.append("\nThe following datasets failed:\n");
+            s.append("\nThe following ").append(failed.size()).append(" datasets failed:\n");
             for (Map.Entry<Dataset, String> entry : failed.entrySet()) {
                 s.append("  ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
             }

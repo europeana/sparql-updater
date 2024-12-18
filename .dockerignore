@@ -1,0 +1,7 @@
+# Send only jar file to Docker
+**
+!/src/docker/*.owl
+!/src/docker/*.sql
+!/src/docker/*.sh
+!/target/sparql-updater.jar
+**/*.user.properties
