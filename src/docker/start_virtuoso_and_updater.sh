@@ -1,6 +1,4 @@
 #!/bin/bash
-echo "Initializing Virtuoso database folder..."
-mkdir /mnt/data/virtuoso
 
 # Start the updater and write logs to file /ingest/output.txt
 echo "Starting SPARQL updater..."
