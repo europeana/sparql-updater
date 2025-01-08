@@ -10,16 +10,16 @@ spec:
         - name: sparql
           image: europeana/sparql
           ports:
-            - containerPort: 8080
+            - containerPort: 8890
           livenessProbe:
             httpGet:
-              port: 8080
+              port: 8890
               path: /sparql
             initialDelaySeconds: 50
             periodSeconds: 20
           readinessProbe:
             httpGet:
-              port: 8080
+              port: 8890
               path: /sparql
             initialDelaySeconds: 50
             periodSeconds: 20
