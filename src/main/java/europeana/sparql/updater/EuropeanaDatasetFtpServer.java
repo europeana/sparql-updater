@@ -52,18 +52,51 @@ public class EuropeanaDatasetFtpServer {
         this.downloadChecksum = downloadChecksum;
 
         initConnection();
-        try {
-            LOG.debug("Changing work directory to path {}...", path);
-            ftpClient.changeWorkingDirectory(path);
-            logServerReply(ftpClient);
-        } catch (IOException io) {
-            LOG.error("Error changing working directoy to path {}", path, io);
+    }
+
+    private void initConnection() {
+        if (ftpClient == null) {
+            LOG.info("Initialising connection to FTP server...");
+            ftpClient = new FTPClient();
+        } else {
+            LOG.info("Re-establishing connection to FTP server...");
         }
+
+        // 1. setup connection
+        try {
+            ftpClient.connect(hostName, port);
+            logServerReply(ftpClient);
+            int replyCode = ftpClient.getReplyCode();
+            if (!FTPReply.isPositiveCompletion(replyCode)) {
+                LOG.error("Error connecting to ftp server {}:{}, error code: {}", hostName, port, replyCode);
+                return;
+            }
+            boolean success = ftpClient.login(username, password);
+            logServerReply(ftpClient);
+            if (!success) {
+                LOG.error("Could not login to FTP server");
+            } else {
+                LOG.info("Logged in to FTP server");
+            }
+        } catch (IOException ex) {
+            LOG.error(ex.getMessage(), ex);
+        }
+
+        // 2. set properties
         try {
             ftpClient.enterLocalPassiveMode();
             ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
         } catch (IOException io) {
             LOG.error("Error setting file type to binary", io);
+        }
+
+        // 3. go to folder with TTL files
+        try {
+            LOG.debug("Changing work directory to path {}...", path);
+            ftpClient.changeWorkingDirectory(path);
+            logServerReply(ftpClient);
+        } catch (IOException io) {
+            LOG.error("Error changing working directory to path {}", path, io);
         }
     }
 
@@ -83,24 +116,24 @@ public class EuropeanaDatasetFtpServer {
     }
 
     /**
-     * Download the zip file of a particular dataset
-     * @param outputFile the location and file name to store the downloaded file
-     * @param datasetId the id of the dataset to download
-     * @throws UpdaterException when there is a problem downloading the file
+     * When processing a dataset takes long the server may close the connection to the ftp client.
      */
-    public void download(File outputFile, String datasetId) throws UpdaterException {
+    @SuppressWarnings("java:S1166") // no need to always log exceptions when checking status
+    private void reconnectIfNeeded() {
+        boolean connectionOk = false;
         try {
-            FTPFile[] listFiles = ftpClient.listFiles();
-            logServerReply(ftpClient);
-            for (FTPFile f : listFiles) {
-                if ((downloadChecksum || f.getName().endsWith(".zip")) && (f.getName().startsWith(datasetId + "."))) {
-                    downloadFile(outputFile, f);
-                    break;
-                }
+            connectionOk = ftpClient.sendNoOp();
+            LOG.debug("FTP connection ok = {}", connectionOk);
+        } catch (IOException e) {
+            LOG.info("FTP connection was closed!");
+        }
+        if (!connectionOk) {
+            try {
+                ftpClient.disconnect();
+            } catch (IOException e) {
+                LOG.warn("Error trying to disconnect FTP client", e);
             }
-            LOG.debug("Set {} downloaded as file {}", datasetId, outputFile);
-        } catch (IOException io) {
-            throw new DownloadException("Error listing files", io);
+            initConnection();
         }
     }
 
@@ -136,26 +169,26 @@ public class EuropeanaDatasetFtpServer {
         return datasetList;
     }
 
-    private void initConnection() {
-        LOG.info("Initialising connection to FTP server...");
-        ftpClient = new FTPClient();
+    /**
+     * Download the zip file of a particular dataset
+     * @param outputFile the location and file name to store the downloaded file
+     * @param datasetId the id of the dataset to download
+     * @throws UpdaterException when there is a problem downloading the file
+     */
+    public void download(File outputFile, String datasetId) throws UpdaterException {
+        reconnectIfNeeded();
         try {
-            ftpClient.connect(hostName, port);
+            FTPFile[] listFiles = ftpClient.listFiles();
             logServerReply(ftpClient);
-            int replyCode = ftpClient.getReplyCode();
-            if (!FTPReply.isPositiveCompletion(replyCode)) {
-                LOG.error("Error connecting to ftp server {}:{}, error code: {}", hostName, port, replyCode);
-                return;
+            for (FTPFile f : listFiles) {
+                if ((downloadChecksum || f.getName().endsWith(".zip")) && (f.getName().startsWith(datasetId + "."))) {
+                    downloadFile(outputFile, f);
+                    break;
+                }
             }
-            boolean success = ftpClient.login(username, password);
-            logServerReply(ftpClient);
-            if (!success) {
-                LOG.error("Could not login to FTP server");
-            } else {
-                LOG.info("Logged in to FTP server");
-            }
-        } catch (IOException ex) {
-            LOG.error(ex.getMessage(), ex);
+            LOG.debug("Set {} downloaded as file {}", datasetId, outputFile);
+        } catch (IOException io) {
+            throw new DownloadException("Error listing files", io);
         }
     }
 

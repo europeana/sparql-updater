@@ -28,6 +28,8 @@ public class UpdateScheduler {
 
     private static final Logger LOG = LogManager.getLogger(UpdateScheduler.class);
 
+    private static final String KUBERNETES_LOCAL_HOST = ".svc.cluster.local";
+
     private final UpdaterSettings settings;
     private ThreadPoolTaskScheduler taskScheduler;
 
@@ -120,6 +122,9 @@ public class UpdateScheduler {
             }
             if (result == null) {
                 result = inetAddress.getHostAddress();
+            }
+            if (result != null && result.endsWith(KUBERNETES_LOCAL_HOST)) {
+                result = result.split("\\.")[0]; // only keep first part in long k8s hostnames
             }
         } catch (UnknownHostException e) {
             LOG.warn("Unable to retrieve local IP address", e);
