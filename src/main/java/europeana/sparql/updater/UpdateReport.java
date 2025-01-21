@@ -1,5 +1,6 @@
 package europeana.sparql.updater;
 
+import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -23,14 +24,17 @@ public class UpdateReport {
     List<Dataset> removed = new ArrayList<>();
     List<Dataset> unchanged = new ArrayList<>();
     Map<Dataset, String> failed = new HashMap<>();
+    private File storageLocation;
     Exception updateStartError;
 
     /**
      * Initialize a new (successful) update report
      * @param serverId identifier of the pod/server that was updated
+     * @param storageLocation any file on the drive on which to report disk usage
      */
-    public UpdateReport(String serverId) {
+    public UpdateReport(String serverId, File storageLocation) {
         this.nodeId = serverId;
+        this.storageLocation = storageLocation;
     }
 
     /**
@@ -124,6 +128,7 @@ public class UpdateReport {
         StringBuilder s = new StringBuilder();
         s.append("Update of SPARQL node ").append(nodeId);
 
+        // report on status
         if (endTime == null) {
             s.append(" was aborted.\n");
         } else {
@@ -137,16 +142,24 @@ public class UpdateReport {
             s.append("It failed with error \"")
                     .append(updateStartError.getMessage() == null ? updateStartError.toString() : updateStartError.getMessage()).append("\".\n");
         }
+
+        // report on datasets
         s.append("Datasets: ").append(created.size()).append(" added, ")
                 .append(updated.size()).append(" updated, ")
                 .append(fixed.size()).append(" fixed, ")
                 .append(removed.size()).append(" deleted, ")
-                .append(unchanged.size()).append(" unchanged.");
+                .append(unchanged.size()).append(" unchanged.")
+                .append("\n");
         if (failed.size() > 0) {
             s.append("\nThe following ").append(failed.size()).append(" datasets failed:\n");
             for (Map.Entry<Dataset, String> entry : failed.entrySet()) {
                 s.append("  ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
             }
+        }
+
+        // report on disk usage
+        if (storageLocation != null) {
+            s.append(ServerInfoUtils.getDiskUsage(storageLocation)).append("\n");
         }
         return s.toString();
     }
