@@ -52,11 +52,17 @@ public final class ServerInfoUtils {
         long total = file.getTotalSpace();
         double used = total - (double) free;
         StringBuilder s = new StringBuilder("Disk usage is ");
-        s.append(Math.round(used / BYTES_PER_GIGABYTE))
+        s.append(round(used / BYTES_PER_GIGABYTE, 1))
                 .append(" GB (")
                 .append(Math.round(used / total * 100))
                 .append("%)");
         return s.toString();
     }
+
+    private static double round (double value, int precision) {
+        int scale = (int) Math.pow(10, precision);
+        return (double) Math.round(value * scale) / scale;
+    }
+
 
 }
