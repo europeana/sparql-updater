@@ -122,6 +122,9 @@ public class UpdaterSettings {
     }
 
     public List<Dataset> getDatasetsList() {
+        if (datasetsList == null) {
+            return null;
+        }
         return datasetsList.stream().toList();
     }
 
