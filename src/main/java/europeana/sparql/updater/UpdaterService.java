@@ -30,12 +30,12 @@ public class UpdaterService {
 
     private static final Logger LOG = LogManager.getLogger(UpdaterService.class);
 
-    private static final int VIRTUOSO_MAX_WAIT_TIME = 60; // seconds
     String serverId;
     EuropeanaSparqlClient sparql;
     EuropeanaDatasetFtpServer ftpServer;
     VirtuosoGraphManagerCl sparqlGraphManager;
     File storageLocation;
+    Integer updateMaxWaitForVirtuoso;
 
     /**
      * Initialize a new updater service
@@ -44,14 +44,16 @@ public class UpdaterService {
      * @param sparql a Europeana sparql client for doing sparql queries
      * @param virtuosoGraphManangerCl the command-line utility for interacting with Virtuoso (isql)
      * @param storageLocation optional, any file or directory located on the drive on which to report disk usage
+     * @param updateMaxWaitForVirtuoso maximum time in seconds how long the update should wait for Virtuoso to be ready (can be null)
      */
     public UpdaterService(String serverId, EuropeanaDatasetFtpServer ftpServer, EuropeanaSparqlClient sparql,
-                          VirtuosoGraphManagerCl virtuosoGraphManangerCl, File storageLocation) {
+                          VirtuosoGraphManagerCl virtuosoGraphManangerCl, File storageLocation, Integer updateMaxWaitForVirtuoso) {
         this.serverId = serverId;
         this.ftpServer = ftpServer;
         this.sparql = sparql;
         this.sparqlGraphManager = virtuosoGraphManangerCl;
         this.storageLocation = storageLocation;
+        this.updateMaxWaitForVirtuoso = updateMaxWaitForVirtuoso;
     }
 
     /**
@@ -62,7 +64,9 @@ public class UpdaterService {
      */
     public UpdateReport runUpdate(List<Dataset> datasets) throws VirtuosoCmdLineException {
         // Check if Virtuoso is up and running first, will throw error if not available in time
-        sparqlGraphManager.waitUntilAvailable(VIRTUOSO_MAX_WAIT_TIME);
+        if (updateMaxWaitForVirtuoso != null) {
+            sparqlGraphManager.waitUntilAvailable(updateMaxWaitForVirtuoso);
+        }
 
         if (storageLocation != null && LOG.isInfoEnabled()) {
             LOG.info(ServerInfoUtils.getDiskUsage(storageLocation));

@@ -40,6 +40,9 @@ public class UpdaterSettings {
     private List<Dataset> datasetsList;
     @Value("${update.cron}")
     private String updateCronSchedule;
+    @Value("${update.wait.virtuoso}")
+    private Integer updateMaxWaitForVirtuoso;
+
 
     @Value("${ttl.folder}")
     private String ttlFolder;
@@ -130,6 +133,10 @@ public class UpdaterSettings {
 
     public String getUpdateCronSchedule() {
         return updateCronSchedule;
+    }
+
+    public Integer getUpdateMaxWaitForVirtuoso() {
+        return updateMaxWaitForVirtuoso;
     }
 
     public String getVirtuosoIsql() {

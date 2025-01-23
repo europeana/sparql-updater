@@ -85,11 +85,13 @@ public class UpdateScheduler {
             EuropeanaDatasetFtpServer ftpServer = new EuropeanaDatasetFtpServer(settings.getFtpHostName(), settings.getFtpPort(),
                     settings.getFtpPath(), settings.getFtpUsername(), settings.getFtpPassword(), settings.getFtpChecksum());
             EuropeanaSparqlClient sparqlEndpoint = new EuropeanaSparqlClient(settings.getVirtuosoEndpoint());
+            Integer maxWaitForVirtuoso = settings.getUpdateMaxWaitForVirtuoso();
 
             String nodeId = ServerInfoUtils.getServerId();
             UpdateReport report;
             try {
-                report = new UpdaterService(nodeId, ftpServer, sparqlEndpoint, graphManager, ttlFolder).runUpdate(settings.getDatasetsList());
+                report = new UpdaterService(nodeId, ftpServer, sparqlEndpoint, graphManager, ttlFolder,
+                        maxWaitForVirtuoso).runUpdate(settings.getDatasetsList());
             } catch (UpdaterException ue) {
                 LOG.error("Error running the update", ue);
                 report = new UpdateReport(nodeId, ue);
