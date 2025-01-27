@@ -23,7 +23,8 @@ Some things to be aware of:
 * You can check which datasets are loaded using this SPARQL query: `SELECT DISTINCT ?g WHERE { GRAPH ?g {?s a ?o} }`
 * Virtuoso recommends to configure the environment variables `VIRT_NumberOfBuffers` and `VIRT_MaxDirtyBuffers` depending
   on the amount of available RAM (see also [Virtuoso performance tuning tutorial](https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning#General%20Memory%20Usage%20Settings)
-  We did so, but when testing locally this didn't have any effect on performance.
+  Doing this will reduce the number of messages from Virtuoso during a full update (e.g. the ones about "Write wait on 
+  column page x....". The settings do not seem to have any effect on performance though.
 
 If you are making (configuration) changes to the sparql-updater don't forget to:
 1. Rebuild the jar

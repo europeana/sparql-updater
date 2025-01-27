@@ -25,8 +25,8 @@ COPY ./src/docker/edm-v527-160401.owl /opt/virtuoso-opensource/vad/edm-v527-1604
 # configured (when first started) to have access to that folder
 ENV VIRT_Parameters_DirsAllowed=.,../vad,/database/tmp-ingest
 # Optimization assuming we have at least 4GB RAM, see also https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning
-ENV VIRT_NumberOfBuffers=340000
-ENV VIRT_MaxDirtyBuffers=250000
+ENV VIRT_Parameters_NumberOfBuffers=340000
+ENV VIRT_Parameters_MaxDirtyBuffers=250000
 
 
 # Install SPARQL updater
