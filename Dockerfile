@@ -24,6 +24,10 @@ COPY ./src/docker/edm-v527-160401.owl /opt/virtuoso-opensource/vad/edm-v527-1604
 # Folder /database/tmp-ingest is used to temporarily store files for ingestion and Virtuoso should be
 # configured (when first started) to have access to that folder
 ENV VIRT_Parameters_DirsAllowed=.,../vad,/database/tmp-ingest
+# Optimization assuming we have at least 4GB RAM, see also https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning
+ENV VIRT_NumberOfBuffers=340000
+ENV VIRT_MaxDirtyBuffers=250000
+
 
 # Install SPARQL updater
 COPY ./target/sparql-updater.jar /opt/sparql-updater/sparql-updater.jar
