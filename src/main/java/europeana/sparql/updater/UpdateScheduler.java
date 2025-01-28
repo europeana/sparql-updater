@@ -1,6 +1,7 @@
 package europeana.sparql.updater;
 
 import europeana.sparql.updater.exception.UpdaterException;
+import europeana.sparql.updater.util.ServerInfoUtils;
 import europeana.sparql.updater.virtuoso.EuropeanaSparqlClient;
 import europeana.sparql.updater.virtuoso.VirtuosoGraphManagerCl;
 import jakarta.annotation.PostConstruct;

@@ -3,6 +3,7 @@ package europeana.sparql.updater;
 import europeana.sparql.updater.Dataset.State;
 import europeana.sparql.updater.exception.UpdaterException;
 import europeana.sparql.updater.exception.VirtuosoCmdLineException;
+import europeana.sparql.updater.util.ServerInfoUtils;
 import europeana.sparql.updater.virtuoso.CommandResult;
 import europeana.sparql.updater.virtuoso.EuropeanaSparqlClient;
 import europeana.sparql.updater.virtuoso.VirtuosoGraphManagerCl;
@@ -98,7 +99,7 @@ public class UpdaterService {
         }
 
         LOG.info("Processing {} datasets...", datasetsToUpdate.size());
-        UpdateReport report = new UpdateReport(serverId, storageLocation);
+        UpdateReport report = new UpdateReport(serverId, storageLocation, datasetsToUpdate.size());
         for (Dataset ds : datasetsToUpdate) {
             try {
                 updateSet(report, ds);
@@ -174,6 +175,7 @@ public class UpdaterService {
         LOG.trace("Downloading zip file {}...", dsZipFile);
         ftpServer.download(dsZipFile, datasetId);
 
+        LOG.info("Download complete, generating files...");
         File dsTtlFile = prepareVirtuosoImportFiles(datasetId, dsZipFile, ds.getTimestampFtp());
         LOG.trace("Deleting zip file {}...", dsZipFile);
         Files.delete(dsZipFile.toPath());
