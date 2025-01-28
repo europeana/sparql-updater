@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sparql-statefulset
+spec:
+  serviceName: sparql-headless-service
+  replicas: ${MIN_REPLICAS}
+  template:
+    metadata:
+      annotations:
+        fluentd/include: '${COLLECT_LOGS}'
+    spec:
+      containers:
+        - name: sparql
+          image: europeana/sparql
+          imagePullPolicy: Always
+          env:
+            - name: DBA_PASSWORD
+              value: ${DBA_PASSWORD}
+            - name: JAVA_TOOL_OPTIONS
+              value: "-javaagent:/usr/local/elastic-apm-agent.jar
+                      -Delastic.apm.enabled=${COLLECT_APM}
+                      -Delastic.apm.application_packages=${ELASTIC_APP_PACKAGES}
+                      -Delastic.apm.server_urls=${ELASTIC_APM_SERVERS}
+                      -Delastic.apm.service_name=${APP_NAME}
+                      -Delastic.apm.environment=${K8S_NAMESPACE}"
+          resources:
+            requests:
+              memory: "${MEMORY_REQUEST}Mi"
+              cpu: "${CPU_REQUEST}m"
+            limits:
+              memory: "${MEMORY_LIMIT}Mi"
+              cpu: "${CPU_LIMIT}m"
+          volumeMounts:
+          - name: pvclaim-10gb
+            mountPath: /database
+  volumeClaimTemplates:
+  - metadata:
+      name: pvclaim-10gb
+    spec:
+      storageClassName: ibmc-vpc-block-general-purpose
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 10Gi

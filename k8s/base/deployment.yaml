@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: sparql-statefulset
+spec:
+  # selector.matchLabels is provided via Kustomize
+  template:
+    spec:
+      containers:
+        - name: sparql
+          image: europeana/sparql
+          ports:
+            - containerPort: 8890
+          livenessProbe:
+            httpGet:
+              port: 8890
+              path: /sparql
+            initialDelaySeconds: 50
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              port: 8890
+              path: /sparql
+            initialDelaySeconds: 50
+            periodSeconds: 20
+          env:
+            - name: SPRING_CONFIG_ADDITIONAL_LOCATION
+              value: "file:/opt/app/config/sparql-updater.user.properties"
+          volumeMounts:
+            - name: config
+              mountPath: "/opt/app/config/sparql-updater.user.properties"
+              readOnly: true
+              subPath: sparql-updater.user.properties
+      volumes:
+        - name: config
+          configMap:
+            name: sparql-updater-config

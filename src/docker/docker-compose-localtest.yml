@@ -4,8 +4,8 @@ services:
     container_name: sparql-updater-virtuoso
     image: europeana/sparql-updater-virtuoso:latest
     environment:
-      DBA_PASSWORD: pa
-
+      # Password should match virtuoso.password in properties file
+      DBA_PASSWORD: REMOVED
     ports:
       - published: 8890
         target: 8890
@@ -13,9 +13,8 @@ services:
         target: 1111
     stdin_open: true
     tty: true
+    # We create a folder ./database on the local system thus mimicking the persistent volume in kubernetes deployments
     volumes:
-      - ./volumes/database:/database
-      - ./volumes/ingest:/ingest
-      - ./volumes/ttl-import:/ttl-import
+      - ./database:/database
 
     

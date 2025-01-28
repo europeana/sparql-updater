@@ -14,8 +14,6 @@ import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.TimeZone;
 
 /**
@@ -88,10 +86,10 @@ public class UpdateScheduler {
                     settings.getFtpPath(), settings.getFtpUsername(), settings.getFtpPassword(), settings.getFtpChecksum());
             EuropeanaSparqlClient sparqlEndpoint = new EuropeanaSparqlClient(settings.getVirtuosoEndpoint());
 
-            String nodeId = getServerId();
+            String nodeId = ServerInfoUtils.getServerId();
             UpdateReport report;
             try {
-                report = new UpdaterService(nodeId, ftpServer, sparqlEndpoint, graphManager).runUpdate(settings.getDatasetsList());
+                report = new UpdaterService(nodeId, ftpServer, sparqlEndpoint, graphManager, ttlFolder).runUpdate(settings.getDatasetsList());
             } catch (UpdaterException ue) {
                 LOG.error("Error running the update", ue);
                 report = new UpdateReport(nodeId, ue);
@@ -108,23 +106,6 @@ public class UpdateScheduler {
                 Slack.publishUpdateReport(report, settings.getSlackWebhook());
             }
         }
-    }
-
-    private static String getServerId() {
-        String result = "unknown";
-        try {
-            InetAddress inetAddress = InetAddress.getLocalHost();
-            result = inetAddress.getCanonicalHostName();
-            if (result == null) {
-                result = inetAddress.getHostName();
-            }
-            if (result == null) {
-                result = inetAddress.getHostAddress();
-            }
-        } catch (UnknownHostException e) {
-            LOG.warn("Unable to retrieve local IP address", e);
-        }
-        return result;
     }
 
     /**

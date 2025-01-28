@@ -1,5 +1,6 @@
 package europeana.sparql.updater;
 
+import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -23,14 +24,17 @@ public class UpdateReport {
     List<Dataset> removed = new ArrayList<>();
     List<Dataset> unchanged = new ArrayList<>();
     Map<Dataset, String> failed = new HashMap<>();
+    private File storageLocation;
     Exception updateStartError;
 
     /**
      * Initialize a new (successful) update report
      * @param serverId identifier of the pod/server that was updated
+     * @param storageLocation any file on the drive on which to report disk usage
      */
-    public UpdateReport(String serverId) {
+    public UpdateReport(String serverId, File storageLocation) {
         this.nodeId = serverId;
+        this.storageLocation = storageLocation;
     }
 
     /**
@@ -124,6 +128,7 @@ public class UpdateReport {
         StringBuilder s = new StringBuilder();
         s.append("Update of SPARQL node ").append(nodeId);
 
+        // report on status
         if (endTime == null) {
             s.append(" was aborted.\n");
         } else {
@@ -153,6 +158,11 @@ public class UpdateReport {
                 s.append("  ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
                 counter++;
             }
+        }
+
+        // report on disk usage
+        if (storageLocation != null) {
+            s.append(ServerInfoUtils.getDiskUsage(storageLocation)).append("\n");
         }
         return s.toString();
     }

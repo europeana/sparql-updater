@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: sparql-headless-service
+spec:
+  clusterIP: None # create headless service so each pod gets its own IP
+  # selector provided via kustomize
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8890

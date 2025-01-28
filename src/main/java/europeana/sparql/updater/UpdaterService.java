@@ -35,6 +35,7 @@ public class UpdaterService {
     EuropeanaSparqlClient sparql;
     EuropeanaDatasetFtpServer ftpServer;
     VirtuosoGraphManagerCl sparqlGraphManager;
+    File storageLocation;
 
     /**
      * Initialize a new updater service
@@ -42,13 +43,15 @@ public class UpdaterService {
      * @param ftpServer the Europeana FTP server that hosts the dataset sources
      * @param sparql a Europeana sparql client for doing sparql queries
      * @param virtuosoGraphManangerCl the command-line utility for interacting with Virtuoso (isql)
+     * @param storageLocation optional, any file or directory located on the drive on which to report disk usage
      */
     public UpdaterService(String serverId, EuropeanaDatasetFtpServer ftpServer, EuropeanaSparqlClient sparql,
-                          VirtuosoGraphManagerCl virtuosoGraphManangerCl) {
+                          VirtuosoGraphManagerCl virtuosoGraphManangerCl, File storageLocation) {
         this.serverId = serverId;
         this.ftpServer = ftpServer;
         this.sparql = sparql;
         this.sparqlGraphManager = virtuosoGraphManangerCl;
+        this.storageLocation = storageLocation;
     }
 
     /**
@@ -60,6 +63,10 @@ public class UpdaterService {
     public UpdateReport runUpdate(List<Dataset> datasets) throws VirtuosoCmdLineException {
         // Check if Virtuoso is up and running first, will throw error if not available in time
         sparqlGraphManager.waitUntilAvailable(VIRTUOSO_MAX_WAIT_TIME);
+
+        if (storageLocation != null && LOG.isInfoEnabled()) {
+            LOG.info(ServerInfoUtils.getDiskUsage(storageLocation));
+        }
 
         List<Dataset> datasetsInFtp = ftpServer.listDatasets();
         Map<Dataset, Dataset> datasetsInSparql = sparql.listDatasets();
@@ -87,7 +94,7 @@ public class UpdaterService {
         }
 
         LOG.info("Processing {} datasets...", datasetsToUpdate.size());
-        UpdateReport report = new UpdateReport(serverId);
+        UpdateReport report = new UpdateReport(serverId, storageLocation);
         for (Dataset ds : datasetsToUpdate) {
             try {
                 updateSet(report, ds);
@@ -173,6 +180,8 @@ public class UpdaterService {
             if (res.isSuccess()) {
                 res = sparqlGraphManager.renameTmpGraph(datasetId);
             }
+        } else {
+            LOG.error("Error creating or updating dataset {}: reason: {}", ds, res.getErrorMessage());
         }
         LOG.trace("Deleting ttl.gz file {}", dsTtlFile);
         Files.delete(dsTtlFile.toPath());
