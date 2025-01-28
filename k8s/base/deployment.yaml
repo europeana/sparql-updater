@@ -11,14 +11,6 @@ spec:
           image: europeana/sparql
           ports:
             - containerPort: 8890
-          startupProbe:
-            httpGet:
-              port: 8890
-              path: /sparql
-            initialDelaySeconds: 10
-            # 12 * 10 sec = 120 seconds, just in case Virtuoso requires much time to start.
-            periodSeconds: 10
-            failureThreshold: 12
           env:
             - name: SPRING_CONFIG_ADDITIONAL_LOCATION
               value: "file:/opt/app/config/sparql-updater.user.properties"
