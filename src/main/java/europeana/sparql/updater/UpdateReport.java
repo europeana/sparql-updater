@@ -135,25 +135,28 @@ public class UpdateReport {
             Duration diff = Duration.between(startTime, endTime);
             s.append(" completed in ").append(diff.toHours()).append("h")
                     .append(diff.toMinutesPart()).append("m")
-                    .append(diff.toSecondsPart()).append("s.\n");
+                    .append(diff.toSecondsPart()).append("s with the following actions:\n");
         }
 
         if (updateStartError != null) {
             s.append("It failed with error \"")
                     .append(updateStartError.getMessage() == null ? updateStartError.toString() : updateStartError.getMessage()).append("\".\n");
         }
-
-        // report on datasets
-        s.append("Datasets: ").append(created.size()).append(" added, ")
-                .append(updated.size()).append(" updated, ")
-                .append(fixed.size()).append(" fixed, ")
-                .append(removed.size()).append(" deleted, ")
-                .append(unchanged.size()).append(" unchanged.")
-                .append("\n");
+        s.append("created: ").append(created.size())
+                .append(", updated: ").append(updated.size())
+                .append(", fixed: ").append(fixed.size())
+                .append(", deleted: ").append(removed.size())
+                .append(", failed: ").append(failed.size());
         if (failed.size() > 0) {
-            s.append("\nThe following ").append(failed.size()).append(" datasets failed:\n");
+            s.append("\nThe following datasets failed:\n");
+            int counter=0;
             for (Map.Entry<Dataset, String> entry : failed.entrySet()) {
+            	if( counter > 10 ) { // list at most 10 of the failed datasets
+            		s.append("  ...\n");  
+            		break;
+            	}
                 s.append("  ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+                counter++;
             }
         }
 
