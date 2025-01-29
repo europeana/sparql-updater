@@ -28,6 +28,7 @@ ENV VIRT_Parameters_DirsAllowed=.,../vad,/database/tmp-ingest
 ENV VIRT_Parameters_NumberOfBuffers=340000
 ENV VIRT_Parameters_MaxDirtyBuffers=250000
 
+#ENV DELETE_VIRTUOSO_DB=false
 
 # Install SPARQL updater
 COPY ./target/sparql-updater.jar /opt/sparql-updater/sparql-updater.jar
