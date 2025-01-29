@@ -8,6 +8,10 @@ if test -f /database/virtuoso.trx; then
   rm -f /database/virtuoso.trx
 fi
 
+if [ "$DELETE_VIRTUOSO_DB" == "true" ]; then
+  echo "Deleting Virtuoso database files..."
+  rm -f /database/virtuoso.*
+fi
 
 # Start the updater in the background
 echo "Starting SPARQL updater..."
