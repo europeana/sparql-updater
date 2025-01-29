@@ -22,6 +22,7 @@ public class UpdateReport extends ProgressLogger {
     String nodeId;
     Instant startTime = Instant.now();
     Instant endTime;
+    int totalSets;
     List<Dataset> created = new ArrayList<>();
     List<Dataset> updated = new ArrayList<>();
     List<Dataset> fixed = new ArrayList<>();
@@ -39,6 +40,7 @@ public class UpdateReport extends ProgressLogger {
      */
     public UpdateReport(String serverId, File storageLocation, int totalSets) {
         super(totalSets, LOG_AFTER_SECONDS);
+        this.totalSets = totalSets;
         this.nodeId = serverId;
         this.storageLocation = storageLocation;
 
@@ -139,7 +141,12 @@ public class UpdateReport extends ProgressLogger {
      */
     public String printSummary() {
         StringBuilder s = new StringBuilder();
-        s.append("Update of SPARQL node ").append(nodeId);
+
+        s.append("Update of ");
+        if (totalSets > 0) {
+            s.append(totalSets).append(" data sets on ");
+        }
+        s.append("SPARQL node ").append(nodeId);
 
         // report on status
         if (endTime == null) {
@@ -156,16 +163,21 @@ public class UpdateReport extends ProgressLogger {
         }
 
         // report on datasets
-        s.append("Datasets: ").append(created.size()).append(" added, ")
-                .append(updated.size()).append(" updated, ")
-                .append(fixed.size()).append(" fixed, ")
-                .append(removed.size()).append(" deleted, ")
-                .append(unchanged.size()).append(" unchanged.")
+        s.append("created: ").append(created.size())
+                .append(", updated: ").append(updated.size())
+                .append(", fixed: ").append(fixed.size())
+                .append(", deleted: ").append(removed.size())
+                .append(", failed: ").append(failed.size())
                 .append("\n");
         if (failed.size() > 0) {
             s.append("\nThe following ").append(failed.size()).append(" datasets failed:\n");
+            int counter = 0;
             for (Map.Entry<Dataset, String> entry : failed.entrySet()) {
+                if (counter > 10) {
+                    s.append("...(listing only first 10 failed datasets)\n");
+                }
                 s.append("  ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
+                counter++;
             }
         }
 

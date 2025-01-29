@@ -36,10 +36,10 @@ public class EuropeanaSparqlClient extends SparqlClient {
 
     /**
      * List all datasets available in SPARQL
-     * @return Map of
+     * @return Map of dataset (values both as key and as value).
      */
     public Map<Dataset, Dataset> listDatasets() {
-        LOG.info("Listing SPARQL datasets...");
+        LOG.info("Listing SPARQL data sets...");
         final Map<Dataset, Dataset> datasets = new HashMap<>();
         super.query("SELECT DISTINCT ?g WHERE { GRAPH ?g {?s a ?o} }", new HandleQueryResult(datasets));
         return datasets;

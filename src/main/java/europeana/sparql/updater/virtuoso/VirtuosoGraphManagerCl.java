@@ -118,7 +118,7 @@ public class VirtuosoGraphManagerCl {
     }
 
     private CommandResult removeGraph(String datasetId, String sqlString) throws IOException {
-        LOG.debug("Removing graph for dataset {}...", datasetId);
+        LOG.debug("Removing graph for data set {}...", datasetId);
         File sqlFile = new File(sqlFolder, datasetId + "_remove.sql");
         FileUtils.write(sqlFile, sqlString, StandardCharsets.UTF_8);
 
@@ -137,7 +137,7 @@ public class VirtuosoGraphManagerCl {
      * @throws IOException if there's a problem while executing the command
      */
     public CommandResult renameTmpGraph(String datasetId) throws IOException {
-        LOG.debug("Renaming graph for dataset {}...", datasetId);
+        LOG.debug("Renaming graph for data set {}...", datasetId);
         String sqlString = IsqlTemplate.getRenameGraphScript(datasetId);
         File sqlFile = new File(sqlFolder, datasetId + "_rename.sql");
         FileUtils.write(sqlFile, sqlString, StandardCharsets.UTF_8);

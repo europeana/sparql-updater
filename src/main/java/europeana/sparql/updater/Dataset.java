@@ -80,8 +80,9 @@ public class Dataset {
     /**
      * Update the state of this dataset by comparing it to the same dataset known in sparql
      * @param dsAtSparql same dataset found in SPARQL
+     * @return boolean indicating whether we need to dataset needs action or not
      */
-    public void updateState(Dataset dsAtSparql) {
+    public boolean updateState(Dataset dsAtSparql) {
         if (dsAtSparql == null) {
             state = State.MISSING;
         } else {
@@ -94,6 +95,7 @@ public class Dataset {
                 state = State.UP_TO_DATE;
             LOG.trace("Dataset {}: timestamp = {}, state = {}", dsAtSparql.getId(), dsAtSparql.getTimestampSparql(), dsAtSparql.getState());
         }
+        return (state != State.UP_TO_DATE);
     }
 
     public boolean isCorruptAtSparql() {
