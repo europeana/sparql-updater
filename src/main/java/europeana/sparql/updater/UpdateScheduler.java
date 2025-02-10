@@ -27,8 +27,11 @@ public class UpdateScheduler {
 
     private static final Logger LOG = LogManager.getLogger(UpdateScheduler.class);
 
+    private static boolean updateInProgress = false;
+
     private final UpdaterSettings settings;
     private ThreadPoolTaskScheduler taskScheduler;
+
 
     /**
      * Initialize a new Update scheduler
@@ -67,6 +70,14 @@ public class UpdateScheduler {
         }
 
         public void run()  {
+            synchronized (this) {
+                if (updateInProgress) {
+                    LOG.error("There's already an update in progress! Aborting...");
+                    return;
+                }
+                updateInProgress = true;
+            }
+
             LOG.info("Starting update...");
             File isqlCommand = new File(settings.getVirtuosoIsql());
             File ttlFolder = new File(settings.getTtlFolder());
@@ -99,6 +110,7 @@ public class UpdateScheduler {
             }
 
             LOG.info("Finished update.");
+            updateInProgress = false;
             if (LOG.isInfoEnabled()) {
                 LOG.info(report.printSummary());
             }
