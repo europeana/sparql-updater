@@ -28,16 +28,20 @@ ENV VIRT_Parameters_DirsAllowed=.,../vad,/database/tmp-ingest
 ENV VIRT_Parameters_NumberOfBuffers=340000
 ENV VIRT_Parameters_MaxDirtyBuffers=250000
 
-#ENV DELETE_VIRTUOSO_DB=false
+#ENV DELETE_VIRTUOSO_DB=true
+#ENV COPY_VIRTUOSO_DB_FROM=<hostname>
 
 # Install SPARQL updater
-COPY ./target/sparql-updater.jar /opt/sparql-updater/sparql-updater.jar
+#COPY ./target/sparql-updater.jar /opt/sparql-updater/sparql-updater.jar
 
-COPY --chmod=777 ./src/docker/start_virtuoso_and_updater.sh /start_virtuoso_and_updater.sh
+#COPY --chmod=777 ./src/docker/start_virtuoso_and_updater.sh /start_virtuoso_and_updater.sh
+COPY --chmod=777 ./src/docker/copy_db_and_start_virtuoso.sh /copy_db_and_start_virtuoso.sh
 
 EXPOSE 8890
 EXPOSE 1111
-ENTRYPOINT ["/start_virtuoso_and_updater.sh"]
+#ENTRYPOINT ["/start_virtuoso_and_updater.sh"]
+ENTRYPOINT ["/copy_db_and_start_virtuoso.sh"]
+
 
 
 

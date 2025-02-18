@@ -1,0 +1,12 @@
+# Can be used to host database files generated during a full update
+version: '3'
+
+services:
+  server:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - ./database:/srv
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
