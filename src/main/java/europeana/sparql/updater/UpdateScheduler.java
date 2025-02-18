@@ -70,6 +70,7 @@ public class UpdateScheduler {
         }
 
         public void run()  {
+            LOG.info("Starting update...");
             synchronized (this) {
                 if (updateInProgress) {
                     LOG.error("There's already an update in progress! Aborting...");
@@ -78,7 +79,6 @@ public class UpdateScheduler {
                 updateInProgress = true;
             }
 
-            LOG.info("Starting update...");
             File isqlCommand = new File(settings.getVirtuosoIsql());
             File ttlFolder = new File(settings.getTtlFolder());
             File sqlFolder = new File(settings.getSqlFolder());
