@@ -1,8 +1,12 @@
 #!/bin/bash
 
 if [ -z "${COPY_VIRTUOSO_DB_FROM}" ]; then
-    echo "No source server defined for database files!"
-    exit 1;
+    echo "No source server defined for database files"
+    if [ -f /database/virtuoso.db ]; then
+        echo "Using existing database."
+    else
+        echo "Starting new database"
+    fi
 else
     echo "Deleting Virtuoso database files..."
     rm -f /database/virtuoso.*
