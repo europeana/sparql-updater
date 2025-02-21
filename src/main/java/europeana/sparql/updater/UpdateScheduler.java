@@ -89,7 +89,7 @@ public class UpdateScheduler {
             String nodeId = ServerInfoUtils.getServerId();
             UpdateReport report;
             try {
-                report = new UpdaterService(nodeId, ftpServer, sparqlEndpoint, graphManager, ttlFolder).runUpdate(settings.getDatasetsList());
+                report = new UpdaterService(nodeId, ftpServer, sparqlEndpoint, graphManager, ttlFolder, settings).runUpdate(settings.getDatasetsList());
             } catch (UpdaterException ue) {
                 LOG.error("Error running the update", ue);
                 report = new UpdateReport(nodeId, ue);

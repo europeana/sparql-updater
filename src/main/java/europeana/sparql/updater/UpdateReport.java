@@ -162,7 +162,7 @@ public class UpdateReport {
 
         // report on disk usage
         if (storageLocation != null) {
-            s.append(ServerInfoUtils.getDiskUsage(storageLocation)).append("\n");
+            s.append(" ; ").append(ServerInfoUtils.getDiskUsage(storageLocation)).append("\n");
         }
         return s.toString();
     }
