@@ -3,6 +3,11 @@ services:
   sparql-updater-virtuoso:
     container_name: sparql-updater-virtuoso
     image: europeana/sparql:latest
+    # Only works when Docker compatibility mode is on
+    deploy:
+      resources:
+        limits:
+          memory: 3G
     environment:
       # Password should match virtuoso.password in properties file
       DBA_PASSWORD: REMOVED
