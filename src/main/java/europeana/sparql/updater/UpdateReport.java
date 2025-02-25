@@ -1,5 +1,7 @@
 package europeana.sparql.updater;
 
+import europeana.sparql.updater.util.ProgressLogger;
+
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
@@ -13,11 +15,14 @@ import java.util.Map;
  * for each dataset and error messages in case of failure.
  *
  */
-public class UpdateReport {
+public class UpdateReport extends ProgressLogger {
+
+    private static final int LOG_AFTER_SECONDS = 180;
 
     String nodeId;
     Instant startTime = Instant.now();
     Instant endTime;
+    int totalSets;
     List<Dataset> created = new ArrayList<>();
     List<Dataset> updated = new ArrayList<>();
     List<Dataset> fixed = new ArrayList<>();
@@ -32,7 +37,9 @@ public class UpdateReport {
      * @param serverId identifier of the pod/server that was updated
      * @param storageLocation any file on the drive on which to report disk usage
      */
-    public UpdateReport(String serverId, File storageLocation) {
+    public UpdateReport(String serverId, File storageLocation, int totalSets) {
+        super(totalSets, LOG_AFTER_SECONDS);
+        this.totalSets = totalSets;
         this.nodeId = serverId;
         this.storageLocation = storageLocation;
     }
@@ -43,6 +50,7 @@ public class UpdateReport {
      * @param error the reason why the update failed
      */
     public UpdateReport(String serverId, Exception error) {
+        super(0, 0);
         this.nodeId = serverId;
         this.updateStartError = error;
     }
@@ -53,6 +61,7 @@ public class UpdateReport {
      */
     public void addCreated(Dataset ds) {
         created.add(ds);
+        logItemAdded();
     }
 
     /**
@@ -61,6 +70,7 @@ public class UpdateReport {
      */
     public void addUpdated(Dataset ds) {
         updated.add(ds);
+        logItemAdded();
     }
 
     /**
@@ -69,6 +79,7 @@ public class UpdateReport {
      */
     public void addFixed(Dataset ds) {
         fixed.add(ds);
+        logItemAdded();
     }
 
     /**
@@ -77,6 +88,7 @@ public class UpdateReport {
      */
     public void addRemoved(Dataset ds) {
         removed.add(ds);
+        logItemAdded();
     }
 
     /**
@@ -94,6 +106,7 @@ public class UpdateReport {
      */
     public void addFailed(Dataset ds, String reason) {
         failed.put(ds, reason);
+        logItemAdded();
     }
 
     public List<Dataset> getCreated() {
@@ -126,16 +139,20 @@ public class UpdateReport {
      */
     public String printSummary() {
         StringBuilder s = new StringBuilder();
-        s.append("Update of SPARQL node ").append(nodeId);
+
+        s.append("Update of ");
+        if (totalSets > 0) {
+            s.append(totalSets).append(" data sets on ");
+        }
+        s.append("SPARQL node ").append(nodeId);
 
         // report on status
         if (endTime == null) {
             s.append(" was aborted.\n");
         } else {
-            Duration diff = Duration.between(startTime, endTime);
-            s.append(" completed in ").append(diff.toHours()).append("h")
-                    .append(diff.toMinutesPart()).append("m")
-                    .append(diff.toSecondsPart()).append("s with the following actions:\n");
+            s.append(" completed in ")
+                    .append(ProgressLogger.getDurationText(endTime.toEpochMilli() - startTime.toEpochMilli()))
+                    .append(".\n");
         }
 
         if (updateStartError != null) {

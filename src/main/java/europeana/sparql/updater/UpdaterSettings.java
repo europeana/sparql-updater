@@ -78,6 +78,7 @@ public class UpdaterSettings {
             LOG.info("  Data sets: {}", datasetsList);
         }
         LOG.info("  Update on startup = {}", doUpdateOnStartup);
+        LOG.info("  Max records per batch = {}", maxRecordsPerImport);
         if (slackWebhook == null || slackWebhook.isBlank()) {
             LOG.info("  No reporting to Slack configured");
         } else {

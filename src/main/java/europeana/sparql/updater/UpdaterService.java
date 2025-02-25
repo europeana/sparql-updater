@@ -86,25 +86,29 @@ public class UpdaterService {
 			datasetsInSparql.entrySet().removeIf(e -> (!datasets.contains(e.getKey())));
 		}
 
+		int nrDataSetsToUpdate = 0;
 		// Iterate over all datasets found on the FTP server
 		for (Dataset ds : datasetsInFtp) {
-			ds.updateState(datasetsInSparql.get(ds));
+			if (ds.updateState(datasetsInSparql.get(ds))) {
+				nrDataSetsToUpdate++;
+			}
 			datasetsInSparql.remove(ds);
 		}
 
-		List<Dataset> datasetsToUpdate = new ArrayList<>(datasetsInFtp);
+		List<Dataset> dataSetsAll = new ArrayList<>(datasetsInFtp);
 		if (!datasetsInSparql.isEmpty()) {
 			// Found datasets in SPARQL that are not on the FTP server
-			datasetsToUpdate = new ArrayList<>(datasetsInFtp);
+			dataSetsAll = new ArrayList<>(datasetsInFtp);
 			for (Dataset ds : datasetsInSparql.keySet()) {
 				ds.setState(State.TO_REMOVE);
-				datasetsToUpdate.add(ds);
+				nrDataSetsToUpdate++;
+				dataSetsAll.add(ds);
 			}
 		}
 
-		LOG.info("Processing {} datasets...", datasetsToUpdate.size());
-		UpdateReport report = new UpdateReport(serverId, storageLocation);
-		for (Dataset ds : datasetsToUpdate) {
+		LOG.info("Found {} data sets, {} need action...", dataSetsAll.size(), nrDataSetsToUpdate);
+		UpdateReport report = new UpdateReport(serverId, storageLocation, nrDataSetsToUpdate);
+		for (Dataset ds : dataSetsAll) {
 			try {
 				updateSet(report, ds);
 			} catch (UpdaterException | IOException e) {

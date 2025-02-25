@@ -11,18 +11,6 @@ spec:
           image: europeana/sparql
           ports:
             - containerPort: 8890
-          livenessProbe:
-            httpGet:
-              port: 8890
-              path: /sparql
-            initialDelaySeconds: 50
-            periodSeconds: 20
-          readinessProbe:
-            httpGet:
-              port: 8890
-              path: /sparql
-            initialDelaySeconds: 50
-            periodSeconds: 20
           env:
             - name: SPRING_CONFIG_ADDITIONAL_LOCATION
               value: "file:/opt/app/config/sparql-updater.user.properties"

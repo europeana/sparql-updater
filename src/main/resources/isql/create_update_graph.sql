@@ -1,6 +1,6 @@
-SPARQL CLEAR GRAPH  <http://data.europeana.eu/dataset/##DATASET_ID##_new>; 
+log_enable(2);
 
-checkpoint;
+SPARQL CLEAR GRAPH  <http://data.europeana.eu/dataset/##DATASET_ID##_new>;
 
 delete from DB.DBA.load_list;
 
@@ -8,13 +8,6 @@ ld_dir ('##IMPORT_FOLDER##', '##TTL_FILENAME##.ttl.gz', 'http://data.europeana.e
 
 rdf_loader_run();
 
-checkpoint;
+log_enable(1);
 
 sparql select 'Result triples: ', count(*) FROM <http://data.europeana.eu/dataset/##DATASET_ID##> WHERE {?s ?p ?o};
-
-
-
-
-
-
-

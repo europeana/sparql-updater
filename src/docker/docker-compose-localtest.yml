@@ -2,7 +2,7 @@ version: '3.7'
 services:
   sparql-updater-virtuoso:
     container_name: sparql-updater-virtuoso
-    image: europeana/sparql-updater-virtuoso:latest
+    image: europeana/sparql:latest
     environment:
       # Password should match virtuoso.password in properties file
       DBA_PASSWORD: REMOVED
