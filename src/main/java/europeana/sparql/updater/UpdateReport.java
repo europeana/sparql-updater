@@ -17,6 +17,7 @@ import java.util.Map;
  */
 public class UpdateReport extends ProgressLogger {
 
+    // How often should we generate progress logs
     private static final int LOG_AFTER_SECONDS = 180;
 
     String nodeId;
@@ -43,7 +44,6 @@ public class UpdateReport extends ProgressLogger {
         this.totalSets = totalSets;
         this.nodeId = serverId;
         this.storageLocation = storageLocation;
-
     }
 
     /**
@@ -175,6 +175,7 @@ public class UpdateReport extends ProgressLogger {
             for (Map.Entry<Dataset, String> entry : failed.entrySet()) {
                 if (counter > 10) {
                     s.append("...(listing only first 10 failed datasets)\n");
+                    break;
                 }
                 s.append("  ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
                 counter++;

@@ -103,7 +103,7 @@ public class UpdateScheduler {
             UpdateReport report;
             try {
                 report = new UpdaterService(nodeId, ftpServer, sparqlEndpoint, graphManager, ttlFolder,
-                        maxWaitForVirtuoso).runUpdate(settings.getDatasetsList());
+                        maxWaitForVirtuoso, settings.getMaxChunckSize()).runUpdate(settings.getDatasetsList());
             } catch (UpdaterException ue) {
                 LOG.error("Error running the update", ue);
                 report = new UpdateReport(nodeId, ue);

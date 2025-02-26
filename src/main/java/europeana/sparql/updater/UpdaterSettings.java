@@ -20,7 +20,7 @@ public class UpdaterSettings {
 
     private static final Logger LOG = LogManager.getLogger(UpdaterSettings.class);
 
-     @Value("${ftp.hostname}")
+    @Value("${ftp.hostname}")
     private String ftpHostName;
     @Value("${ftp.port}")
     private Integer ftpPort;
@@ -46,6 +46,8 @@ public class UpdaterSettings {
 
     @Value("${ttl.folder}")
     private String ttlFolder;
+    @Value("${ttl.maxRecordsPerImport}")
+    private Integer maxRecordsPerImport;
     @Value("${sql.folder}")
     private String sqlFolder;
 
@@ -170,4 +172,8 @@ public class UpdaterSettings {
     public String getSlackWebhook() {
         return slackWebhook;
     }
+
+	public int getMaxRecordsPerImport() {
+		return maxRecordsPerImport;
+	}
 }
