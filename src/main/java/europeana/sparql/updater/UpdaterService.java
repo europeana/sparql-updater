@@ -3,6 +3,7 @@ package europeana.sparql.updater;
 import europeana.sparql.updater.Dataset.State;
 import europeana.sparql.updater.exception.UpdaterException;
 import europeana.sparql.updater.exception.VirtuosoCmdLineException;
+import europeana.sparql.updater.util.ServerInfoUtils;
 import europeana.sparql.updater.virtuoso.CommandResult;
 import europeana.sparql.updater.virtuoso.EuropeanaSparqlClient;
 import europeana.sparql.updater.virtuoso.VirtuosoGraphManagerCl;
@@ -180,7 +181,7 @@ public class UpdaterService {
         File dsTtlFile = new File(outputFolder, datasetId + ".ttl.gz");
         CommandResult res = null;
         try (ImportFileCreator ttlCreator = new ImportFileCreator(datasetId, dsZipFile, dsTtlFile, ds.getTimestampFtp(),
-                settings.getMaxRecordsPerImport())) {
+                maxChunkSize)) {
             while (ttlCreator.hasNextTtlFile() && (res == null || res.isSuccess())) {
                 ttlCreator.createNextTtlFile();
                 res = sparqlGraphManager.ingestGraph(datasetId + "_new");
