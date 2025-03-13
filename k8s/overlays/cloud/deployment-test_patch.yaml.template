@@ -31,6 +31,8 @@ spec:
             limits:
               memory: "${MEMORY_LIMIT}Mi"
               cpu: "${CPU_LIMIT}m"
+          # Use this variable to inject liveness or readiness probes (disabled during ingestion)
+          ${PROBES}
           volumeMounts:
           - name: pvclaim-10gb
             mountPath: /database

@@ -26,7 +26,7 @@ public class VirtuosoGraphManagerCl {
     private static final Logger LOG = LogManager.getLogger(VirtuosoGraphManagerCl.class);
 
     private static final int TIMEOUT_VIRTUOSO_CHECK = (int) TimeUnit.SECONDS.toMillis(5);
-    private static final int WAIT_BETWEEN_CHECKS = 4; // seconds
+    private static final int WAIT_BETWEEN_CHECKS = 5; // seconds
     private static final Pattern SUCCESS_TRIPLES = Pattern.compile("Result triples:\\s+(\\d+)");
 
     private final String dbaUser;
@@ -76,20 +76,21 @@ public class VirtuosoGraphManagerCl {
      * If that doesn't happen within the specified waiting time an exception is thrown
      * @param maxWaitTimeSec maximum amount of time before giving up
      * @return boolean
-     * @throws VirtuosoCmdLineException if Virtuose cannot be reached within the provided maximum time (plus timeout)
+     * @throws VirtuosoCmdLineException if Virtuoso cannot be reached within the provided maximum time (plus timeout)
      */
     public boolean waitUntilAvailable(int maxWaitTimeSec) throws VirtuosoCmdLineException  {
         long start = System.currentTimeMillis();
-        boolean available = false;
-        while (!available && System.currentTimeMillis() - start < TimeUnit.SECONDS.toMillis(maxWaitTimeSec)) {
-            available = isAvailable();
+        boolean available = isAvailable();
+        while (!available && (System.currentTimeMillis() - start < TimeUnit.SECONDS.toMillis(maxWaitTimeSec))) {
             try {
                 TimeUnit.SECONDS.sleep(WAIT_BETWEEN_CHECKS);
             } catch (InterruptedException e) {
                 LOG.warn("Interruption while checking if Virtuoso is ready", e);
                 Thread.currentThread().interrupt();
             }
+            available = isAvailable();
         }
+
         if (available) {
             return true;
         }
@@ -117,7 +118,7 @@ public class VirtuosoGraphManagerCl {
     }
 
     private CommandResult removeGraph(String datasetId, String sqlString) throws IOException {
-        LOG.debug("Removing graph for dataset {}...", datasetId);
+        LOG.debug("Removing graph for data set {}...", datasetId);
         File sqlFile = new File(sqlFolder, datasetId + "_remove.sql");
         FileUtils.write(sqlFile, sqlString, StandardCharsets.UTF_8);
 
@@ -136,7 +137,7 @@ public class VirtuosoGraphManagerCl {
      * @throws IOException if there's a problem while executing the command
      */
     public CommandResult renameTmpGraph(String datasetId) throws IOException {
-        LOG.debug("Renaming graph for dataset {}...", datasetId);
+        LOG.debug("Renaming graph for data set {}...", datasetId);
         String sqlString = IsqlTemplate.getRenameGraphScript(datasetId);
         File sqlFile = new File(sqlFolder, datasetId + "_rename.sql");
         FileUtils.write(sqlFile, sqlString, StandardCharsets.UTF_8);

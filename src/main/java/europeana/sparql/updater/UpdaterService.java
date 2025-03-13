@@ -3,25 +3,21 @@ package europeana.sparql.updater;
 import europeana.sparql.updater.Dataset.State;
 import europeana.sparql.updater.exception.UpdaterException;
 import europeana.sparql.updater.exception.VirtuosoCmdLineException;
+import europeana.sparql.updater.util.ServerInfoUtils;
 import europeana.sparql.updater.virtuoso.CommandResult;
 import europeana.sparql.updater.virtuoso.EuropeanaSparqlClient;
 import europeana.sparql.updater.virtuoso.VirtuosoGraphManagerCl;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.GZIPOutputStream;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 /**
  * Service that runs the SPARQL endpoint update process
@@ -36,6 +32,8 @@ public class UpdaterService {
     EuropeanaDatasetFtpServer ftpServer;
     VirtuosoGraphManagerCl sparqlGraphManager;
     File storageLocation;
+    Integer updateMaxWaitForVirtuoso;
+    Integer maxChunkSize;
 
     /**
      * Initialize a new updater service
@@ -44,14 +42,18 @@ public class UpdaterService {
      * @param sparql a Europeana sparql client for doing sparql queries
      * @param virtuosoGraphManangerCl the command-line utility for interacting with Virtuoso (isql)
      * @param storageLocation optional, any file or directory located on the drive on which to report disk usage
+     * @param updateMaxWaitForVirtuoso maximum time in seconds how long the update should wait for Virtuoso to be ready (can be null)
+     * @param maxChunkSize, maximum number of items to process in 1 go (if set to 0 then there's no limit)
      */
     public UpdaterService(String serverId, EuropeanaDatasetFtpServer ftpServer, EuropeanaSparqlClient sparql,
-                          VirtuosoGraphManagerCl virtuosoGraphManangerCl, File storageLocation) {
+                          VirtuosoGraphManagerCl virtuosoGraphManangerCl, File storageLocation, Integer updateMaxWaitForVirtuoso, Integer maxChunkSize) {
         this.serverId = serverId;
         this.ftpServer = ftpServer;
         this.sparql = sparql;
         this.sparqlGraphManager = virtuosoGraphManangerCl;
         this.storageLocation = storageLocation;
+        this.updateMaxWaitForVirtuoso = updateMaxWaitForVirtuoso;
+        this.maxChunkSize = maxChunkSize;
     }
 
     /**
@@ -61,9 +63,10 @@ public class UpdaterService {
      * @throws VirtuosoCmdLineException when Virtuoso is not available
      */
     public UpdateReport runUpdate(List<Dataset> datasets) throws VirtuosoCmdLineException {
-        // Check if Virtuoso is up and running first, will throw error if not available in time
-        sparqlGraphManager.waitUntilAvailable(VIRTUOSO_MAX_WAIT_TIME);
-
+        // Check if Virtuoso is up and running first, this will throw an error if not available in time
+        if (updateMaxWaitForVirtuoso != null) {
+            sparqlGraphManager.waitUntilAvailable(updateMaxWaitForVirtuoso);
+        }
         if (storageLocation != null && LOG.isInfoEnabled()) {
             LOG.info(ServerInfoUtils.getDiskUsage(storageLocation));
         }
@@ -77,29 +80,33 @@ public class UpdaterService {
             datasetsInSparql.entrySet().removeIf(e -> (!datasets.contains(e.getKey())));
         }
 
+        int nrDataSetsToUpdate = 0;
         // Iterate over all datasets found on the FTP server
         for (Dataset ds : datasetsInFtp) {
-            ds.updateState(datasetsInSparql.get(ds));
+            if (ds.updateState(datasetsInSparql.get(ds))) {
+                nrDataSetsToUpdate++;
+            }
             datasetsInSparql.remove(ds);
         }
 
-        List<Dataset> datasetsToUpdate = new ArrayList<>(datasetsInFtp);
+        List<Dataset> dataSetsAll = new ArrayList<>(datasetsInFtp);
         if (!datasetsInSparql.isEmpty()) {
             // Found datasets in SPARQL that are not on the FTP server
-            datasetsToUpdate = new ArrayList<>(datasetsInFtp);
+            dataSetsAll = new ArrayList<>(datasetsInFtp);
             for (Dataset ds : datasetsInSparql.keySet()) {
                 ds.setState(State.TO_REMOVE);
-                datasetsToUpdate.add(ds);
+                nrDataSetsToUpdate++;
+                dataSetsAll.add(ds);
             }
         }
 
-        LOG.info("Processing {} datasets...", datasetsToUpdate.size());
-        UpdateReport report = new UpdateReport(serverId, storageLocation);
-        for (Dataset ds : datasetsToUpdate) {
+        LOG.info("Found {} data sets, {} need action...", dataSetsAll.size(), nrDataSetsToUpdate);
+        UpdateReport report = new UpdateReport(serverId, storageLocation, nrDataSetsToUpdate);
+        for (Dataset ds : dataSetsAll) {
             try {
                 updateSet(report, ds);
             } catch (UpdaterException | IOException  e) {
-                LOG.error("Failed to update dataset {}", ds, e);
+                LOG.error("Failed to update data set {}", ds, e);
                 report.addFailed(ds, StringUtils.isEmpty(e.getMessage()) ? ("Exception " + e.getClass().getSimpleName())
                         : e.getMessage());
             }
@@ -170,11 +177,17 @@ public class UpdaterService {
         LOG.trace("Downloading zip file {}...", dsZipFile);
         ftpServer.download(dsZipFile, datasetId);
 
-        File dsTtlFile = prepareVirtuosoImportFiles(datasetId, dsZipFile, ds.getTimestampFtp());
-        LOG.trace("Deleting zip file {}...", dsZipFile);
-        Files.delete(dsZipFile.toPath());
+        LOG.info("Download complete, generating files...");
+        File dsTtlFile = new File(outputFolder, datasetId + ".ttl.gz");
+        CommandResult res = null;
+        try (ImportFileCreator ttlCreator = new ImportFileCreator(datasetId, dsZipFile, dsTtlFile, ds.getTimestampFtp(),
+                maxChunkSize)) {
+            while (ttlCreator.hasNextTtlFile() && (res == null || res.isSuccess())) {
+                ttlCreator.createNextTtlFile();
+                res = sparqlGraphManager.ingestGraph(datasetId + "_new");
+            }
+        }
 
-        CommandResult res = sparqlGraphManager.ingestGraph(datasetId + "_new");
         if (res.isSuccess()) {
             res = sparqlGraphManager.removeObsoleteGraph(datasetId);
             if (res.isSuccess()) {
@@ -185,6 +198,8 @@ public class UpdaterService {
         }
         LOG.trace("Deleting ttl.gz file {}", dsTtlFile);
         Files.delete(dsTtlFile.toPath());
+        LOG.trace("Deleting zip file {}...", dsZipFile);
+        Files.delete(dsZipFile.toPath());
 
         if (LOG.isInfoEnabled()) {
             Instant endTime = Instant.now();
@@ -195,55 +210,4 @@ public class UpdaterService {
         return res;
     }
 
-    private File prepareVirtuosoImportFiles(String datasetId, File dsZipFile, Instant datasetTimestampAtFtp) throws IOException {
-        File outputFolder = dsZipFile.getParentFile();
-        File datasetTtlFile = new File(outputFolder, datasetId + ".ttl.gz");
-        if (datasetTtlFile.exists()) {
-            LOG.trace("Deleting old ttl.gz file {}...", datasetTtlFile);
-            Files.delete(datasetTtlFile.toPath());
-        }
-
-        LOG.trace("Generating TTL zip file {}...", datasetTtlFile);
-        try (FileOutputStream datasetTtlFileStream = new FileOutputStream(datasetTtlFile);
-             GZIPOutputStream gzipDatasetTtlStream = new GZIPOutputStream(datasetTtlFileStream);
-             Writer writer = new OutputStreamWriter(gzipDatasetTtlStream, StandardCharsets.UTF_8)) {
-
-            processZipFile(dsZipFile, writer);
-
-            // add the triple with the last modification timestamp from the FTP server
-            writer.write("\n\n<http://data.europeana.eu/dataset/");
-            writer.write(datasetId);
-            writer.write("> <http://purl.org/dc/terms/modified> \"");
-            writer.write(datasetTimestampAtFtp.toString());
-            writer.write("\"^^<http://www.w3.org/2001/XMLSchema#dateTime> .\n");
-        }
-        return datasetTtlFile;
-    }
-
-    private void processZipFile(File dsZipFile, Writer writer) throws IOException {
-        boolean firstRecord = true;
-        int nrEntries = 0;
-        try (ZipInputStream zip = new ZipInputStream(new FileInputStream(dsZipFile))) {
-            ZipEntry entry = zip.getNextEntry();
-            while (entry != null) {
-                writeLines(writer, firstRecord, zip);
-                firstRecord = false;
-                zip.closeEntry();
-                entry = zip.getNextEntry();
-                nrEntries++;
-            }
-        }
-        LOG.trace("Added {} entries to file {}", nrEntries, dsZipFile);
-    }
-
-    private void writeLines(Writer writer, boolean firstRecord, ZipInputStream zip) throws IOException {
-        String edmRdf = IOUtils.toString(zip, StandardCharsets.UTF_8);
-        String[] lines = edmRdf.split("\n");
-        for (String line : lines) {
-            if (firstRecord || !line.startsWith("@prefix")) {
-                writer.write(line);
-                writer.write("\n");
-            }
-        }
-    }
 }

@@ -1,7 +1,9 @@
 package europeana.sparql.updater;
 
+import europeana.sparql.updater.util.ProgressLogger;
+import europeana.sparql.updater.util.ServerInfoUtils;
+
 import java.io.File;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,11 +15,15 @@ import java.util.Map;
  * for each dataset and error messages in case of failure.
  *
  */
-public class UpdateReport {
+public class UpdateReport extends ProgressLogger {
+
+    // How often should we generate progress logs
+    private static final int LOG_AFTER_SECONDS = 180;
 
     String nodeId;
     Instant startTime = Instant.now();
     Instant endTime;
+    int totalSets;
     List<Dataset> created = new ArrayList<>();
     List<Dataset> updated = new ArrayList<>();
     List<Dataset> fixed = new ArrayList<>();
@@ -31,8 +37,11 @@ public class UpdateReport {
      * Initialize a new (successful) update report
      * @param serverId identifier of the pod/server that was updated
      * @param storageLocation any file on the drive on which to report disk usage
+     * @param totalSets the total number of set to process
      */
-    public UpdateReport(String serverId, File storageLocation) {
+    public UpdateReport(String serverId, File storageLocation, int totalSets) {
+        super(totalSets, LOG_AFTER_SECONDS);
+        this.totalSets = totalSets;
         this.nodeId = serverId;
         this.storageLocation = storageLocation;
     }
@@ -43,6 +52,7 @@ public class UpdateReport {
      * @param error the reason why the update failed
      */
     public UpdateReport(String serverId, Exception error) {
+        super(0, 0);
         this.nodeId = serverId;
         this.updateStartError = error;
     }
@@ -53,6 +63,7 @@ public class UpdateReport {
      */
     public void addCreated(Dataset ds) {
         created.add(ds);
+        logItemAdded();
     }
 
     /**
@@ -61,6 +72,7 @@ public class UpdateReport {
      */
     public void addUpdated(Dataset ds) {
         updated.add(ds);
+        logItemAdded();
     }
 
     /**
@@ -69,6 +81,7 @@ public class UpdateReport {
      */
     public void addFixed(Dataset ds) {
         fixed.add(ds);
+        logItemAdded();
     }
 
     /**
@@ -77,6 +90,7 @@ public class UpdateReport {
      */
     public void addRemoved(Dataset ds) {
         removed.add(ds);
+        logItemAdded();
     }
 
     /**
@@ -94,6 +108,7 @@ public class UpdateReport {
      */
     public void addFailed(Dataset ds, String reason) {
         failed.put(ds, reason);
+        logItemAdded();
     }
 
     public List<Dataset> getCreated() {
@@ -126,35 +141,42 @@ public class UpdateReport {
      */
     public String printSummary() {
         StringBuilder s = new StringBuilder();
-        s.append("Update of SPARQL node ").append(nodeId);
+
+        s.append("Update of ");
+        if (totalSets > 0) {
+            s.append(totalSets).append(" data sets on ");
+        }
+        s.append("SPARQL node ").append(nodeId);
 
         // report on status
         if (endTime == null) {
             s.append(" was aborted.\n");
         } else {
-            Duration diff = Duration.between(startTime, endTime);
-            s.append(" completed in ").append(diff.toHours()).append("h")
-                    .append(diff.toMinutesPart()).append("m")
-                    .append(diff.toSecondsPart()).append("s with the following actions:\n");
+            s.append(" completed in ")
+                    .append(ProgressLogger.getDurationText(endTime.toEpochMilli() - startTime.toEpochMilli()))
+                    .append(".\n");
         }
 
         if (updateStartError != null) {
             s.append("It failed with error \"")
                     .append(updateStartError.getMessage() == null ? updateStartError.toString() : updateStartError.getMessage()).append("\".\n");
         }
+
+        // report on datasets
         s.append("created: ").append(created.size())
                 .append(", updated: ").append(updated.size())
                 .append(", fixed: ").append(fixed.size())
                 .append(", deleted: ").append(removed.size())
-                .append(", failed: ").append(failed.size());
+                .append(", failed: ").append(failed.size())
+                .append("\n");
         if (failed.size() > 0) {
-            s.append("\nThe following datasets failed:\n");
-            int counter=0;
+            s.append("\nThe following ").append(failed.size()).append(" datasets failed:\n");
+            int counter = 0;
             for (Map.Entry<Dataset, String> entry : failed.entrySet()) {
-            	if( counter > 10 ) { // list at most 10 of the failed datasets
-            		s.append("  ...\n");  
-            		break;
-            	}
+                if (counter > 10) {
+                    s.append("...(listing only first 10 failed datasets)\n");
+                    break;
+                }
                 s.append("  ").append(entry.getKey()).append(": ").append(entry.getValue()).append("\n");
                 counter++;
             }

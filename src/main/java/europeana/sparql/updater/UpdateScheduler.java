@@ -1,6 +1,7 @@
 package europeana.sparql.updater;
 
 import europeana.sparql.updater.exception.UpdaterException;
+import europeana.sparql.updater.util.ServerInfoUtils;
 import europeana.sparql.updater.virtuoso.EuropeanaSparqlClient;
 import europeana.sparql.updater.virtuoso.VirtuosoGraphManagerCl;
 import jakarta.annotation.PostConstruct;
@@ -26,8 +27,11 @@ public class UpdateScheduler {
 
     private static final Logger LOG = LogManager.getLogger(UpdateScheduler.class);
 
+    private static boolean updateInProgress = false;
+
     private final UpdaterSettings settings;
     private ThreadPoolTaskScheduler taskScheduler;
+
 
     /**
      * Initialize a new Update scheduler
@@ -67,6 +71,14 @@ public class UpdateScheduler {
 
         public void run()  {
             LOG.info("Starting update...");
+            synchronized (this) {
+                if (updateInProgress) {
+                    LOG.error("There's already an update in progress! Aborting...");
+                    return;
+                }
+                updateInProgress = true;
+            }
+
             File isqlCommand = new File(settings.getVirtuosoIsql());
             File ttlFolder = new File(settings.getTtlFolder());
             File sqlFolder = new File(settings.getSqlFolder());
@@ -85,17 +97,20 @@ public class UpdateScheduler {
             EuropeanaDatasetFtpServer ftpServer = new EuropeanaDatasetFtpServer(settings.getFtpHostName(), settings.getFtpPort(),
                     settings.getFtpPath(), settings.getFtpUsername(), settings.getFtpPassword(), settings.getFtpChecksum());
             EuropeanaSparqlClient sparqlEndpoint = new EuropeanaSparqlClient(settings.getVirtuosoEndpoint());
+            Integer maxWaitForVirtuoso = settings.getUpdateMaxWaitForVirtuoso();
 
             String nodeId = ServerInfoUtils.getServerId();
             UpdateReport report;
             try {
-                report = new UpdaterService(nodeId, ftpServer, sparqlEndpoint, graphManager, ttlFolder).runUpdate(settings.getDatasetsList());
+                report = new UpdaterService(nodeId, ftpServer, sparqlEndpoint, graphManager, ttlFolder,
+                        maxWaitForVirtuoso, settings.getMaxRecordsPerImport()).runUpdate(settings.getDatasetsList());
             } catch (UpdaterException ue) {
                 LOG.error("Error running the update", ue);
                 report = new UpdateReport(nodeId, ue);
             }
 
             LOG.info("Finished update.");
+            updateInProgress = false;
             if (LOG.isInfoEnabled()) {
                 LOG.info(report.printSummary());
             }

@@ -1,4 +1,4 @@
-package europeana.sparql.updater;
+package europeana.sparql.updater.util;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

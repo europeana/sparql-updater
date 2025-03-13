@@ -20,7 +20,7 @@ public class UpdaterSettings {
 
     private static final Logger LOG = LogManager.getLogger(UpdaterSettings.class);
 
-     @Value("${ftp.hostname}")
+    @Value("${ftp.hostname}")
     private String ftpHostName;
     @Value("${ftp.port}")
     private Integer ftpPort;
@@ -40,9 +40,14 @@ public class UpdaterSettings {
     private List<Dataset> datasetsList;
     @Value("${update.cron}")
     private String updateCronSchedule;
+    @Value("${update.wait.virtuoso}")
+    private Integer updateMaxWaitForVirtuoso;
+
 
     @Value("${ttl.folder}")
     private String ttlFolder;
+    @Value("${ttl.maxRecordsPerImport}")
+    private Integer maxRecordsPerImport;
     @Value("${sql.folder}")
     private String sqlFolder;
 
@@ -76,6 +81,7 @@ public class UpdaterSettings {
             LOG.info("  Data sets: {}", datasetsList);
         }
         LOG.info("  Update on startup = {}", doUpdateOnStartup);
+        LOG.info("  Max records per batch = {}", maxRecordsPerImport);
         if (slackWebhook == null || slackWebhook.isBlank()) {
             LOG.info("  No reporting to Slack configured");
         } else {
@@ -132,6 +138,10 @@ public class UpdaterSettings {
         return updateCronSchedule;
     }
 
+    public Integer getUpdateMaxWaitForVirtuoso() {
+        return updateMaxWaitForVirtuoso;
+    }
+
     public String getVirtuosoIsql() {
         return virtuosoIsql;
     }
@@ -163,4 +173,8 @@ public class UpdaterSettings {
     public String getSlackWebhook() {
         return slackWebhook;
     }
+
+	public Integer getMaxRecordsPerImport() {
+		return maxRecordsPerImport;
+	}
 }

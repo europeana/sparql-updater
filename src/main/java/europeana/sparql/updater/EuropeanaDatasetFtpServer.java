@@ -142,7 +142,7 @@ public class EuropeanaDatasetFtpServer {
      * @return a list of available data sets
      */
     public List<Dataset> listDatasets() {
-        LOG.info("Listing FTP server datasets...");
+        LOG.info("Listing FTP server data sets...");
         List<Dataset> datasetList = new ArrayList<>();
         try {
             ftpClient.changeWorkingDirectory(path);
