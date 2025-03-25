@@ -8,6 +8,7 @@ LABEL org.opencontainers.image.vendor="Europeana Foundation" \
 # Install OpenJDK-17
 ENV DEBIAN_FRONTEND=noninteractive
 USER root
+RUN add-apt-repository ppa:openjdk-r/ppa
 RUN apt-get update
 RUN apt-get install openjdk-17-jre openjdk-17-jdk-headless -y
 RUN apt-get clean
