@@ -7,6 +7,7 @@ LABEL org.opencontainers.image.vendor="Europeana Foundation" \
 
 # Install OpenJDK-17
 ENV DEBIAN_FRONTEND=noninteractive
+USER root
 RUN apt-get update && \
     apt-get install -y openjdk-17-jdk && \
     apt-get clean;
