@@ -7,7 +7,7 @@
 # documentation.
 
 name: Java CI with Maven
-run-name: CI build of branch ${{ github.ref }} triggered by a ${{ github.event_name }} done by ${{ github.actor }}.
+run-name: Build and Run tests
 
 on: push
 
@@ -29,12 +29,12 @@ jobs:
         uses: whelk-io/maven-settings-xml-action@v22
         # see: https://github.com/europeana/europeana-parent-pom/blob/master/settings.xml
         with:
-          repositories: '[{ "id": "europeana-libs-release", "url": "https://artifactory.eanadev.org/artifactory/libs-release"}, \
+          repositories: '[{ "id": "europeana-libs-release", "url": "https://artifactory.eanadev.org/artifactory/libs-release"}, 
             { "id": "europeana-libs-snapshot", "url": "https://artifactory.eanadev.org/artifactory/libs-snapshot", "snapshots": { "enabled": "true" }}]'
-          plugin_repositories: '[{ "id": "europeana-plugins-release", "url": "https://artifactory.eanadev.org/artifactory/plugins-release" }, \ 
+          plugin_repositories: '[{ "id": "europeana-plugins-release", "url": "https://artifactory.eanadev.org/artifactory/plugins-release" },  
             { "id": "europeana-plugins-snapshot", "url": "https://artifactory.eanadev.org/artifactory/plugins-snapshot", "snapshots": { "enabled": "true" }}]'
-      - name: Build with Maven
-        run: mvn -B package --file pom.xml
+      - name: Build and test with Maven
+        run: mvn -B verify --file pom.xml
 
       # Uploads the full dependency graph to GitHub to improve the quality of Dependabot alerts this repository can receive
       - name: Update dependency graph
