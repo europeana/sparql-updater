@@ -47,6 +47,7 @@ jobs:
           # actions/setup-java changes JAVA_HOME so it needs to be reset to match the depcheck image
           JAVA_HOME: /opt/jdk
         with:
+          project: ${{ github.repository }}
           format: 'HTML'
           args: >
             --failOnCVSS 8
