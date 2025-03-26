@@ -9,7 +9,7 @@
 name: Java + Maven CI
 run-name: Build and Run tests
 
-on: push, workflow_dispatch
+on: push
 
 jobs:
   build:
