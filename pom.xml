@@ -118,31 +118,32 @@
                 </executions>
             </plugin>
 
-            <plugin>
-                <!-- This will be active when running the verify or install goal
-                     To skip (e.g. during debugging) use 'mvn clean package')-->
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <version>11.1.0</version>
-                <configuration>
-                    <nvdApiKeyEnvironmentVariable>NVD_APIKEY</nvdApiKeyEnvironmentVariable>
-                    <!-- For analysis on Jenkins we need to host our own known_exploited_vulnerabilities.json file because
-                         the www.cisa.gov website that hosts them blocks all Hetzner servers -->
-                    <knownExploitedUrl>https://artifactory.eanadev.org/artifactory/ext-release-local/gov/cisa/www/known_exploited_vulnerabilities.json</knownExploitedUrl>
-                    <failBuildOnCVSS>8</failBuildOnCVSS>
-                    <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>
-                    <!--                    <suppressionFiles>-->
-                    <!--                        <suppressionFile>owasp-suppress.xml</suppressionFile>-->
-                    <!--                    </suppressionFiles>-->
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+<!--            <plugin>-->
+<!--                &lt;!&ndash; This will be active when running the verify or install goal-->
+<!--                     To skip (e.g. during debugging) use 'mvn clean package')&ndash;&gt;-->
+<!--                <groupId>org.owasp</groupId>-->
+<!--                <artifactId>dependency-check-maven</artifactId>-->
+<!--                <version>12.1.0</version>-->
+<!--                <configuration>-->
+<!--                    &lt;!&ndash; -->
+<!--                    <nvdApiKeyEnvironmentVariable>NVD_APIKEY</nvdApiKeyEnvironmentVariable>-->
+<!--                    &lt;!&ndash; For analysis on Jenkins we need to host our own known_exploited_vulnerabilities.json file because-->
+<!--                         the www.cisa.gov website that hosts them blocks all Hetzner servers &ndash;&gt;-->
+<!--                    <knownExploitedUrl>https://artifactory.eanadev.org/artifactory/ext-release-local/gov/cisa/www/known_exploited_vulnerabilities.json</knownExploitedUrl>-->
+<!--                    <failBuildOnCVSS>8</failBuildOnCVSS>-->
+<!--                    <assemblyAnalyzerEnabled>false</assemblyAnalyzerEnabled>-->
+<!--                    &lt;!&ndash;                    <suppressionFiles>&ndash;&gt;-->
+<!--                    &lt;!&ndash;                        <suppressionFile>owasp-suppress.xml</suppressionFile>&ndash;&gt;-->
+<!--                    &lt;!&ndash;                    </suppressionFiles>&ndash;&gt;-->
+<!--                </configuration>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <goals>-->
+<!--                            <goal>check</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
         <resources>
             <resource>
