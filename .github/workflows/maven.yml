@@ -6,10 +6,10 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Java CI with Maven
+name: Java + Maven CI
 run-name: Build and Run tests
 
-on: push
+on: push, workflow_dispatch
 
 jobs:
   build:
