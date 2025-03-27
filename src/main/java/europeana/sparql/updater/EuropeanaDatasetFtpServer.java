@@ -63,6 +63,7 @@ public class EuropeanaDatasetFtpServer {
         }
 
         // 1. setup connection
+        boolean connected = false;
         try {
             ftpClient.connect(hostName, port);
             logServerReply(ftpClient);
@@ -71,9 +72,9 @@ public class EuropeanaDatasetFtpServer {
                 LOG.error("Error connecting to ftp server {}:{}, error code: {}", hostName, port, replyCode);
                 return;
             }
-            boolean success = ftpClient.login(username, password);
+            connected = ftpClient.login(username, password);
             logServerReply(ftpClient);
-            if (!success) {
+            if (!connected) {
                 LOG.error("Could not login to FTP server");
             } else {
                 LOG.info("Logged in to FTP server");
@@ -82,21 +83,23 @@ public class EuropeanaDatasetFtpServer {
             LOG.error(ex.getMessage(), ex);
         }
 
-        // 2. set properties
-        try {
-            ftpClient.enterLocalPassiveMode();
-            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
-        } catch (IOException io) {
-            LOG.error("Error setting file type to binary", io);
-        }
+        if (connected) {
+            // 2. set properties
+            try {
+                ftpClient.enterLocalPassiveMode();
+                ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+            } catch (IOException io) {
+                LOG.error("Error setting file type to binary", io);
+            }
 
-        // 3. go to folder with TTL files
-        try {
-            LOG.debug("Changing work directory to path {}...", path);
-            ftpClient.changeWorkingDirectory(path);
-            logServerReply(ftpClient);
-        } catch (IOException io) {
-            LOG.error("Error changing working directory to path {}", path, io);
+            // 3. go to folder with TTL files
+            try {
+                LOG.debug("Changing work directory to path {}...", path);
+                ftpClient.changeWorkingDirectory(path);
+                logServerReply(ftpClient);
+            } catch (IOException io) {
+                LOG.error("Error changing working directory to path {}", path, io);
+            }
         }
     }
 
