@@ -1,0 +1,14 @@
+# This can be used to "publish" a generated Virtuoso database on a server using NGINX
+# Note that it requires a nginx.conf file
+version: '3'
+
+services:
+  server:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - 80:80
+    volumes:
+      - ./database:/srv
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+
