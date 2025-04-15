@@ -8,11 +8,11 @@ LABEL org.opencontainers.image.vendor="Europeana Foundation" \
       org.opencontainers.image.licenses="EUPL-1.2"
 
 # Install Virtuoso config files
-COPY load-edm.sql /initdb.d/load-edm.sql
-COPY edm-v527-160401.owl /opt/virtuoso-opensource/vad/edm-v527-160401.owl
+COPY ./virtuoso/load-edm.sql /initdb.d/load-edm.sql
+COPY ./virtuoso/edm-v527-160401.owl /opt/virtuoso-opensource/vad/edm-v527-160401.owl
 
-# Config for running in K8S
-# -------------------------
+# Config for running Virtuoso in K8S
+# ----------------------------------
 # Buffer optimization for 8GB RAM, see also https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning
 ENV VIRT_Parameters_NumberOfBuffers=680000
 ENV VIRT_Parameters_MaxDirtyBuffers=500000
@@ -20,7 +20,7 @@ ENV VIRT_Parameters_MaxDirtyBuffers=500000
 # When this variable is set, the start-up script will first try to copy a Virtuoso database from the specified server
 #ENV COPY_VIRTUOSO_DB_FROM=<hostname>
 
-COPY --chmod=777 ./start_virtuoso.sh /start_virtuoso.sh
+COPY --chmod=777 ./virtuoso/start_virtuoso.sh /start_virtuoso.sh
 
 EXPOSE 8890
 EXPOSE 1111
