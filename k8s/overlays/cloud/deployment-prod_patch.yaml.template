@@ -29,6 +29,9 @@ spec:
               value: "680000"
             - name: VIRT_Parameters_MaxDirtyBuffers
               value: "500000"
+            # Location to download database from (empty = no download)
+            - name: COPY_VIRTUOSO_DB_FROM
+              value: ${COPY_VIRTUOSO_DB_FROM}
           resources:
             requests:
               memory: "${MEMORY_REQUEST}Mi"
