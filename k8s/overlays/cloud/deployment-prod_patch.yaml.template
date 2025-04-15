@@ -11,8 +11,8 @@ spec:
         fluentd/include: '${COLLECT_LOGS}'
     spec:
       containers:
-        - name: sparql
-          image: europeana/sparql
+        - name: sparql-virtuoso
+          image: europeana/sparql-virtuoso
           imagePullPolicy: Always
           env:
             - name: DBA_PASSWORD

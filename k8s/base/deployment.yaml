@@ -7,8 +7,8 @@ spec:
   template:
     spec:
       containers:
-        - name: sparql
-          image: europeana/sparql
+        - name: sparql-virtuoso
+          image: europeana/sparql-virtuoso
           ports:
             - containerPort: 8890
           env:
