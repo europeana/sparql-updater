@@ -9,8 +9,3 @@ labels:
     pairs:
       app: sparql
 
-# expects files to be in the same directory as this file
-configMapGenerator:
-  - name: sparql-updater-config
-    files:
-      - sparql-updater.user.properties
