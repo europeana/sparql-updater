@@ -3,22 +3,23 @@ Software to automatically fill a Virtuoso DB with Europeana datasets from the Eu
 sets regularly.
 
 # Steps to build and start a Virtuoso Docker image locally
-1. Check if the Virtuoso buffer settings in the `/virtuoso/Dockerfile_k8s` are appropriate for the server where this is running
-   (see also [Virtuoso performance tuning tutorial](https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning#General%20Memory%20Usage%20Settings)
-2. Go to folder `virtuoso` and run `docker build -t europeana/sparql-virtuoso -f Dockerfile_k8s .` This will create a 
-   Docker image for Virtuoso with relevant settings.
-3. Adjust the image name in the file `virtuoso/docker-compose-localtest.yml` and use that to start the container. The 
-   Virtuoso GUI will be available at http://localhost:8890/
+1. Check if the Virtuoso buffer settings in the `/virtuoso/Dockerfile_virtuoso` are appropriate for the server where this 
+   should be running (see also [Virtuoso performance tuning tutorial](https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning#General%20Memory%20Usage%20Settings)
+2. Run `docker build -t europeana/sparql-virtuoso -f Dockerfile_virtuoso .` This will create a Docker image for Virtuoso
+   with relevant settings.
+3. Check if the settings in the file `virtuoso/docker-compose-virtuoso.yml` are correct and use the file to start the 
+   container (`docker compose -f docker-compose-virtuoso.yml up`). The Virtuoso GUI will be available at 
+   http://localhost:8890/
 
 # Steps to build and start a Virtuoso Docker image including the sparql-updater locally
 1. Check if the configuration in the file `/src/main/resources/sparql-updater.user.properties` is present and values are correct
 2. Run `mvn clean package` to create the file `/target/sparql-updater.jar`.
    This file contains the code to automatically load sets from the Europeana FTP server and write it to Virtuoso.
-3. Go the root project folder and run `docker build -t europeana/sparql-virtuoso-updater -f Dockerfile_updater .`. This 
-   will create a Docker image containing both Virtuoso and the built sparql-updater.jar. The jar file will contain the 
-   sparql-updater.user.properties file, so don't push this to DockerHub!
-4. Check if the settings in the file `virtuoso/docker-compose-updater.yml` are correct and use that to start the
-   container.
+3. Run `docker build -t europeana/sparql-virtuoso-updater -f Dockerfile_updater .`. This  will create a Docker image 
+   containing both Virtuoso and the built sparql-updater.jar. The jar file will contain the sparql-updater.user.properties 
+   file, so don't push this to DockerHub!
+4. Check if the settings in the file `virtuoso/docker-compose-updater.yml` are correct and use the file to start the
+   container (`docker compose -f docker-compose-updater.yml up`).
 
 Some things to be aware of:
 * Loading all Europeana datasets in Virtuoso will require around 150GB of disk space!
