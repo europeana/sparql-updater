@@ -27,8 +27,6 @@ public class UpdateScheduler {
 
     private static final Logger LOG = LogManager.getLogger(UpdateScheduler.class);
 
-    private static boolean updateInProgress = false;
-
     private final UpdaterSettings settings;
     private ThreadPoolTaskScheduler taskScheduler;
 
@@ -63,6 +61,8 @@ public class UpdateScheduler {
     }
 
     private static class DoUpdate implements Runnable{
+
+        private static boolean updateInProgress = false; // to prevent an update running multiple time simultaneously
         private final UpdaterSettings settings;
 
         public DoUpdate(UpdaterSettings settings) {
