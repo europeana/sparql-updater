@@ -13,9 +13,13 @@ COPY ./virtuoso/edm-v527-160401.owl /opt/virtuoso-opensource/vad/edm-v527-160401
 
 # Config for running Virtuoso in K8S
 # ----------------------------------
-# Buffer optimization for 8GB RAM, see also https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning
-ENV VIRT_Parameters_NumberOfBuffers=680000
-ENV VIRT_Parameters_MaxDirtyBuffers=500000
+# Optimization assuming we have at 24GB RAM, see also https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning
+ENV VIRT_Parameters_NumberOfBuffers=2040000
+ENV VIRT_Parameters_MaxDirtyBuffers=1500000
+# Optimization to allow more users querying simultaneously (default is merely 10)
+ENV VIRT_Parameters_MaxClientConnections=100
+ENV VIRT_HTTPServer_MaxClientConnections=100
+ENV VIRT_HTTPServer_MaxKeepAlives=100
 
 # When this variable is set, the start-up script will first try to copy a Virtuoso database from the specified server
 #ENV COPY_VIRTUOSO_DB_FROM=<hostname>

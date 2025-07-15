@@ -1,15 +1,14 @@
 version: '3.7'
 services:
-  sparql-virtuoso-updater:
+  sparql-virtuoso:
     container_name: sparql-virtuoso
     image: europeana/sparql-virtuoso:latest
     # Only works when Docker compatibility mode is on
     deploy:
       resources:
         limits:
-          memory: 4G
+          memory: 24G
     environment:
-      # Password should match virtuoso.password in sparql-updater properties file
       DBA_PASSWORD: REMOVED
     ports:
       - published: 8890
