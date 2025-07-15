@@ -1,7 +1,7 @@
-# Send only jar file to Docker
+# Put only config files and start script in Docker image
 **
-!/src/docker/*.owl
-!/src/docker/*.sql
-!/src/docker/*.sh
+!/virtuoso/*.owl
+!/virtuoso/*.sql
+!/virtuoso/*.sh
 !/target/sparql-updater.jar
 **/*.user.properties

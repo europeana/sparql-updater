@@ -11,8 +11,8 @@ spec:
         fluentd/include: '${COLLECT_LOGS}'
     spec:
       containers:
-        - name: sparql
-          image: europeana/sparql
+        - name: sparql-virtuoso
+          image: europeana/sparql-virtuoso
           imagePullPolicy: Always
           env:
             - name: DBA_PASSWORD
@@ -24,6 +24,14 @@ spec:
                       -Delastic.apm.server_urls=${ELASTIC_APM_SERVERS}
                       -Delastic.apm.service_name=${APP_NAME}
                       -Delastic.apm.environment=${K8S_NAMESPACE}"
+            # Virtuoso buffer settings for 8GB RAM
+            - name: VIRT_Parameters_NumberOfBuffers
+              value: "680000"
+            - name: VIRT_Parameters_MaxDirtyBuffers
+              value: "500000"
+            # Location to download database from (empty = no download)
+            - name: COPY_VIRTUOSO_DB_FROM
+              value: ${COPY_VIRTUOSO_DB_FROM}
           resources:
             requests:
               memory: "${MEMORY_REQUEST}Mi"
@@ -34,15 +42,15 @@ spec:
           # Use this variable to inject liveness or readiness probes (disabled during ingestion)
           ${PROBES}
           volumeMounts:
-          - name: pvclaim-500gb
+          - name: pvclaim-200gb
             mountPath: /database
   volumeClaimTemplates:
   - metadata:
-      name: pvclaim-500gb
+      name: pvclaim-200gb
     spec:
       storageClassName: ibmc-vpc-block-general-purpose
       accessModes:
         - ReadWriteOnce
       resources:
         requests:
-          storage: 500Gi
+          storage: 200Gi

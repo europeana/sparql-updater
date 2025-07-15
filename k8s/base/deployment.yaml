@@ -7,19 +7,11 @@ spec:
   template:
     spec:
       containers:
-        - name: sparql
-          image: europeana/sparql
+        - name: sparql-virtuoso
+          image: europeana/sparql-virtuoso
           ports:
             - containerPort: 8890
           env:
-            - name: SPRING_CONFIG_ADDITIONAL_LOCATION
-              value: "file:/opt/app/config/sparql-updater.user.properties"
-          volumeMounts:
-            - name: config
-              mountPath: "/opt/app/config/sparql-updater.user.properties"
-              readOnly: true
-              subPath: sparql-updater.user.properties
-      volumes:
-        - name: config
-          configMap:
-            name: sparql-updater-config
+            # Note that after 50 seconds any connection in our k8s is automatically terminated
+            - name: VIRT_SPARQL_MaxQueryExecutionTime
+              value: "45"

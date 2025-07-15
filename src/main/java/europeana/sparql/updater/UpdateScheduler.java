@@ -83,10 +83,14 @@ public class UpdateScheduler {
             File ttlFolder = new File(settings.getTtlFolder());
             File sqlFolder = new File(settings.getSqlFolder());
             if (!ttlFolder.exists()) {
-                ttlFolder.mkdir();
+                if (!ttlFolder.mkdir()) {
+                    throw new RuntimeException("Unable to create folder " + ttlFolder.getAbsolutePath());
+                }
             }
             if (!sqlFolder.exists()) {
-                sqlFolder.mkdir();
+                if (!sqlFolder.mkdir()) {
+                    throw new RuntimeException("Unable to create folder " + sqlFolder.getAbsolutePath());
+                }
             }
 
             VirtuosoGraphManagerCl graphManager = new VirtuosoGraphManagerCl(isqlCommand, settings.getVirtuosoPort(),

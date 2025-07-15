@@ -1,0 +1,35 @@
+# Docker file for running Virtuoso only
+
+FROM openlink/virtuoso-opensource-7:7.2
+LABEL org.opencontainers.image.vendor="Europeana Foundation" \
+      org.opencontainers.image.authors="api@europeana.eu" \
+      org.opencontainers.image.documentation="https://pro.europeana.eu/page/apis" \
+      org.opencontainers.image.source="https://github.com/europeana/sparql-updater" \
+      org.opencontainers.image.licenses="EUPL-1.2"
+
+# Install Virtuoso config files
+COPY ./virtuoso/load-edm.sql /initdb.d/load-edm.sql
+COPY ./virtuoso/edm-v527-160401.owl /opt/virtuoso-opensource/vad/edm-v527-160401.owl
+
+# Config for running Virtuoso in K8S
+# ----------------------------------
+# Optimization assuming we have at 24GB RAM, see also https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning
+ENV VIRT_Parameters_NumberOfBuffers=2040000
+ENV VIRT_Parameters_MaxDirtyBuffers=1500000
+# Optimization to allow more users querying simultaneously (default is merely 10)
+ENV VIRT_Parameters_MaxClientConnections=100
+ENV VIRT_HTTPServer_MaxClientConnections=100
+ENV VIRT_HTTPServer_MaxKeepAlives=100
+
+# When this variable is set, the start-up script will first try to copy a Virtuoso database from the specified server
+#ENV COPY_VIRTUOSO_DB_FROM=<hostname>
+
+COPY --chmod=777 ./virtuoso/start_virtuoso.sh /start_virtuoso.sh
+
+EXPOSE 8890
+EXPOSE 1111
+ENTRYPOINT ["/start_virtuoso.sh"]
+
+
+
+

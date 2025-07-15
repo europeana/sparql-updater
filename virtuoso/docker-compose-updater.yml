@@ -1,16 +1,17 @@
 version: '3.7'
 services:
-  sparql-updater-virtuoso:
-    container_name: sparql-updater-virtuoso
-    image: europeana/sparql:latest
+  sparql-virtuoso-updater:
+    container_name: sparql-virtuoso-updater
+    image: europeana/sparql-virtuoso-updater:latest
     # Only works when Docker compatibility mode is on
     deploy:
       resources:
         limits:
-          memory: 2G
+          memory: 16G
     environment:
+      # Use the option below to specify an external configuration file
       #SPRING_CONFIG_ADDITIONAL_LOCATION: file:/opt/app/config/sparql-updater.user.properties
-      # Password should match virtuoso.password in properties file
+      # Password should match virtuoso.password in sparql-updater properties file
       DBA_PASSWORD: REMOVED
     ports:
       - published: 8890
@@ -23,9 +24,8 @@ services:
       # We create a folder ./database on the local system thus mimicking the persistent volume in kubernetes deployments
       - ./database:/database
       # For local testing we can use a locally built image with a jar that contain the user.properties.
-      # For testing images from Docker hub (on non-k8s servers) we can inject a user.properties file by uncommenting the
-      # line below and the SPRING_CONFIG_ADDITIONAL_LOCATION environment variable. Note that the properties file needs
-      # to be present in the same folder as this file.
+      # For testing images in Docker hub on non-k8s servers we can inject a user.properties file by uncommenting the
+      # line below. Note that the properties file needs te be present in the same folder as this file.
       #- ./sparql-updater.user.properties:/opt/app/config/sparql-updater.user.properties
 
     
