@@ -61,9 +61,10 @@ public class UpdateScheduler {
     }
 
     private static class DoUpdate implements Runnable{
-        private static boolean updateInProgress = false;
 
+        private static boolean updateInProgress = false; // to prevent an update running multiple time simultaneously
         private final UpdaterSettings settings;
+
         public DoUpdate(UpdaterSettings settings) {
             this.settings = settings;
         }
