@@ -13,7 +13,7 @@ COPY ./virtuoso/edm-v527-160401.owl /opt/virtuoso-opensource/vad/edm-v527-160401
 
 # Config for running Virtuoso in K8S
 # ----------------------------------
-# Optimization assuming we have at 24GB RAM, see also https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning
+# Optimization assuming we have around 24GB RAM, see also https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning
 ENV VIRT_Parameters_NumberOfBuffers=2040000
 ENV VIRT_Parameters_MaxDirtyBuffers=1500000
 # Optimization to allow more users querying simultaneously (default is merely 10)

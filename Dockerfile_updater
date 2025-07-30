@@ -25,9 +25,9 @@ COPY ./virtuoso/edm-v527-160401.owl /opt/virtuoso-opensource/vad/edm-v527-160401
 # Folder /database/tmp-ingest is used to temporarily store files for ingestion so for loading data Virtuoso should be
 # configured to have access to that folder
 ENV VIRT_Parameters_DirsAllowed=.,../vad,/database/tmp-ingest
-# Buffer optimization for 16GB RAM, see also https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning
-ENV VIRT_Parameters_NumberOfBuffers=1360000
-ENV VIRT_Parameters_MaxDirtyBuffers=1000000
+# Buffer optimization for 32GB RAM, see also https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning
+ENV VIRT_Parameters_NumberOfBuffers=2720000
+ENV VIRT_Parameters_MaxDirtyBuffers=2000000
 
 # Install SPARQL updater
 COPY ./target/sparql-updater.jar /opt/sparql-updater/sparql-updater.jar
