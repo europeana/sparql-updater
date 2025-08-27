@@ -83,11 +83,11 @@ public class UpdaterService {
 
         int nrDataSetsToUpdate = 0;
         // Iterate over all datasets found on the FTP server
-        for (Dataset ds : datasetsInFtp) {
-            if (ds.updateState(datasetsInSparql.get(ds))) {
+        for (Dataset dsFtp : datasetsInFtp) {
+            if (dsFtp.updateState(datasetsInSparql.get(dsFtp))) {
                 nrDataSetsToUpdate++;
             }
-            datasetsInSparql.remove(ds);
+            datasetsInSparql.remove(dsFtp);
         }
 
         List<Dataset> dataSetsAll = new ArrayList<>(datasetsInFtp);
