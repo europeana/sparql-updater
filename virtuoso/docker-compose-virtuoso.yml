@@ -1,4 +1,3 @@
-version: '3.7'
 services:
   sparql-virtuoso:
     container_name: sparql-virtuoso

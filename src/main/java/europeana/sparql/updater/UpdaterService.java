@@ -58,11 +58,11 @@ public class UpdaterService {
 
     /**
      * Start an update
-     * @param datasets only update the provided list of datasets, if null all datasets are updated
+     * @param datasetsToUpdate only update the provided list of datasets, if null all datasets are updated
      * @return an UpdateReport
      * @throws VirtuosoCmdLineException when Virtuoso is not available
      */
-    public UpdateReport runUpdate(List<Dataset> datasets) throws VirtuosoCmdLineException {
+    public UpdateReport runUpdate(List<Dataset> datasetsToUpdate) throws VirtuosoCmdLineException {
         // Check if Virtuoso is up and running first, this will throw an error if not available in time
         if (updateMaxWaitForVirtuoso != null) {
             sparqlGraphManager.waitUntilAvailable(updateMaxWaitForVirtuoso);
@@ -73,11 +73,12 @@ public class UpdaterService {
 
         List<Dataset> datasetsInFtp = ftpServer.listDatasets();
         Map<Dataset, Dataset> datasetsInSparql = sparql.listDatasets();
+        LOG.info("Found {} datasets on FTP server", datasetsToUpdate.size(), datasetsInFtp.size());
 
         // When processing only particular sets, we filter out the rest
-        if (datasets != null && !datasets.isEmpty()) {
-            datasetsInFtp.removeIf(e -> (!datasets.contains(e)));
-            datasetsInSparql.entrySet().removeIf(e -> (!datasets.contains(e.getKey())));
+        if (datasetsToUpdate != null && !datasetsToUpdate.isEmpty()) {
+            datasetsInFtp.removeIf(e -> (!datasetsToUpdate.contains(e)));
+            datasetsInSparql.entrySet().removeIf(e -> (!datasetsToUpdate.contains(e.getKey())));
         }
 
         int nrDataSetsToUpdate = 0;

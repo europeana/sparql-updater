@@ -1,4 +1,3 @@
-version: '3.7'
 services:
   sparql-virtuoso-updater:
     container_name: sparql-virtuoso-updater
