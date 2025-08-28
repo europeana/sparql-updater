@@ -88,23 +88,19 @@ public class Dataset {
             state = State.MISSING;
         } else {
             setTimestampSparql(dsAtSparql.getTimestampSparql());
-            LOG.info("Dataset {} with FTP timestamp {} and SPARQL timestamp {} is in Virtuoso with FTP timestamp {}, SPARQL timestamp {} and state {}",
-                    getId(), timestampFtp, timestampSparql, dsAtSparql.getTimestampFtp(),  dsAtSparql.getTimestampSparql(), dsAtSparql.getState());
-//            if ("123".equals(this.getId())) {
-//                LOG.info("Dataset {} with FTP timestamp {} and SPARQL timestamp {} is in Virtuoso with FTP timestamp {}, SPARQL timestamp {} and state {}",
-//                        getId(), timestampFtp, timestampSparql, dsAtSparql.getTimestampFtp(),  dsAtSparql.getTimestampSparql(), dsAtSparql.getState());
-//            }
+            if (getId().startsWith("123")) {
+                LOG.trace("Dataset {} with FTP timestamp {} is in Virtuoso with timestamp {} and state {}",
+                        getId(), timestampFtp, timestampSparql, dsAtSparql.getState());
+            }
             if (timestampSparql == null || dsAtSparql.getState() == State.CORRUPT)
                 state = State.CORRUPT;
-            else if (timestampFtp.isAfter(timestampSparql)) {
-                if ("123".equals(this.getId())) {
-                    LOG.info("FTP timestamp is after SPARQL timestamp! FTP = {}, SPARQL = {}",
-                            timestampFtp, timestampSparql);
-                }
+            else if (timestampFtp.isAfter(timestampSparql))
                 state = State.OUTDATED;
-            } else {
+            else
                 state = State.UP_TO_DATE;
-            }
+        }
+        if (getId().startsWith("123")) {
+            LOG.trace("Dataset {} state is now {}", getId(), state);
         }
         return (state != State.UP_TO_DATE);
     }
