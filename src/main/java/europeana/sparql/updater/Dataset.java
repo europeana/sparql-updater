@@ -88,10 +88,10 @@ public class Dataset {
             state = State.MISSING;
         } else {
             setTimestampSparql(dsAtSparql.getTimestampSparql());
-            if (getId().startsWith("123")) {
-                LOG.trace("Dataset {} with FTP timestamp {} is in Virtuoso with timestamp {} and state {}",
+//            if (getId().startsWith("123")) {
+                LOG.info("Dataset {} with FTP timestamp {} is in Virtuoso with timestamp {} and state {}",
                         getId(), timestampFtp, timestampSparql, dsAtSparql.getState());
-            }
+            //}
             if (timestampSparql == null || dsAtSparql.getState() == State.CORRUPT)
                 state = State.CORRUPT;
             else if (timestampFtp.isAfter(timestampSparql))
@@ -99,9 +99,9 @@ public class Dataset {
             else
                 state = State.UP_TO_DATE;
         }
-        if (getId().startsWith("123")) {
-            LOG.trace("Dataset {} state is now {}", getId(), state);
-        }
+        //if (getId().startsWith("123")) {
+            LOG.info("Dataset {} state is now {}", getId(), state);
+        //}
         return (state != State.UP_TO_DATE);
     }
 
