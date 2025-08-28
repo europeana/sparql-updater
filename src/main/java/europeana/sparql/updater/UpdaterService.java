@@ -73,7 +73,7 @@ public class UpdaterService {
 
         List<Dataset> datasetsInFtp = ftpServer.listDatasets();
         Map<Dataset, Dataset> datasetsInSparql = sparql.listDatasets();
-        LOG.info("Found {} datasets on FTP server", datasetsToUpdate.size(), datasetsInFtp.size());
+        LOG.info("Found {} datasets on FTP server", datasetsInFtp.size());
 
         // When processing only particular sets, we filter out the rest
         if (datasetsToUpdate != null && !datasetsToUpdate.isEmpty()) {
