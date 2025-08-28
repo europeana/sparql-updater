@@ -21,6 +21,9 @@
         <!-- Set to TRACE to log all found datasets -->
         <Logger name="europeana.sparql.updater.EuropeanaDatasetFtpServer" level="INFO"/>
 
+        <!-- Set to TRACE to log more detailed information about dataset timestamps -->
+        <Logger name="europeana.sparql.updater.Dataset" level="INFO"/>
+
         <!-- Set to DEBUG to log command exit values, use TRACE to log Virtuoso output -->
         <Logger name="europeana.sparql.updater.virtuoso.VirtuosoGraphManagerCl" level="INFO"/>
 

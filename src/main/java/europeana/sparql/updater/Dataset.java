@@ -84,18 +84,19 @@ public class Dataset {
      */
     public boolean updateState(Dataset dsAtSparql) {
         if (dsAtSparql == null) {
-            LOG.info("Datasets {} is not in Virtuoso", getId());
+            LOG.trace("Dataset {} is not in Virtuoso", getId());
             state = State.MISSING;
         } else {
             setTimestampSparql(dsAtSparql.getTimestampSparql());
-            LOG.info("Dataset {} with FTP timestamp {} is in Virtuoso with timestamp {}, FTP timestamp {} and state {}",
-                    getId(), timestampFtp, dsAtSparql.getTimestampSparql(), dsAtSparql.getTimestampFtp(), dsAtSparql.getState());
-            if (timestampSparql == null || dsAtSparql.getState() == State.CORRUPT)
+            if (timestampSparql == null || dsAtSparql.getState() == State.CORRUPT) {
                 state = State.CORRUPT;
-            else if (timestampFtp.isAfter(timestampSparql))
+            } else if (timestampFtp.isAfter(timestampSparql)) {
                 state = State.OUTDATED;
-            else
+            } else {
                 state = State.UP_TO_DATE;
+            }
+            LOG.trace("Dataset {} with FTP timestamp {} is in Virtuoso with timestamp {} and state {}. New state = {}",
+                    getId(), timestampFtp, timestampSparql, dsAtSparql.getState(), state);
         }
         return (state != State.UP_TO_DATE);
     }
