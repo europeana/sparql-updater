@@ -28,6 +28,12 @@ ENV VIRT_Parameters_DirsAllowed=.,../vad,/database/tmp-ingest
 # Buffer optimization for 32GB RAM, see also https://vos.openlinksw.com/owiki/wiki/VOS/VirtRDFPerformanceTuning
 ENV VIRT_Parameters_NumberOfBuffers=2720000
 ENV VIRT_Parameters_MaxDirtyBuffers=2000000
+# Optimization to allow more users querying simultaneously (default is merely 10)
+ENV VIRT_Parameters_MaxClientConnections=100
+ENV VIRT_HTTPServer_MaxClientConnections=100
+ENV VIRT_HTTPServer_MaxKeepAlives=100
+ENV VIRT_SPARQL_MaxQueryExecutionTime=45
+
 
 # Install SPARQL updater
 COPY ./target/sparql-updater.jar /opt/sparql-updater/sparql-updater.jar

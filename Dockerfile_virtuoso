@@ -20,6 +20,7 @@ ENV VIRT_Parameters_MaxDirtyBuffers=1500000
 ENV VIRT_Parameters_MaxClientConnections=100
 ENV VIRT_HTTPServer_MaxClientConnections=100
 ENV VIRT_HTTPServer_MaxKeepAlives=100
+ENV VIRT_SPARQL_MaxQueryExecutionTime=45
 
 # When this variable is set, the start-up script will first try to copy a Virtuoso database from the specified server
 #ENV COPY_VIRTUOSO_DB_FROM=<hostname>
